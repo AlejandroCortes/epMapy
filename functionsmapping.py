@@ -1,10 +1,3 @@
-#This python script contains functions that perform calculations on EPMA data
-#Quantitative maps obtained with Probe Image and CalcImage software (PfE Package from J. Donovan)
-#can be read directly by these functions, if not then consider the format of the data
-#1)EPMA data should be a .xslx file
-#2)These functions consider the following oxide order and labels of data: 
-#SiO2 WT%,TiO2 WT%,Al2O3 WT%,FeO WT%,MnO WT%,MgO WT%,CaO WT%,Na2O WT%,K2O WT%,P2O5 WT%,Total'
-
 #importing libraries for standalone functions
 import numpy as np
 import pandas as pd
