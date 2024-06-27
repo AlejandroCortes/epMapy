@@ -16,7 +16,7 @@ from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3 
 print('\n\nThis script allows plotting EPMA quantitative maps and do calculations with the data within.\nPlease be aware that this script is designed for the output file obtained with CalcImage (J. Donovan).\nThe input file for this script is a .xslx file, so you should convert .DAT to .xslx before\nat least the following column names (case and character sensitive):\nX,Y,NX,NY,NXY,SiO2 WT%,TiO2 WT%,Al2O3 WT%,FeO WT%,MnO WT%,MgO WT%,CaO WT%,Na2O WT%,K2O WT%,P2O5 WT%,Total\nX and Y: x-y coordinates EPMA position, NX and NY: pixel number in x-y (matrix)\nNXY: consecutive pixel number, all the rest values are weight percents including the total.\nUnfortunatelly this script does not work with more oxides or halogens at the moment, but can be easily\nmodified to do so by the user. Just keep in mind to also modify the external functions that are being used.\n')
 
 #Reading excel file with major and trace elements in glasses
-name = input('Please type the path where the data file is located e.g. Documents/Python/Mydata.xlsx')
+name = input('Please type the path where the data file is located:   ')
 
 #data        = pd.read_excel (r'09028A_M1.xlsx',skiprows=[0])
 data        = pd.read_excel (name,)
@@ -28,39 +28,23 @@ df_coord    = pd.DataFrame(data, columns = ['X','Y','NX','NY'])
 data_majors = df_majors.to_numpy()
 data_coord  = df_coord.to_numpy()
 
-# ..
+#setting up empty arrays
 c           = int(max(data_coord[:,2]))-1 #max num pixel on x
 d           = int(max(data_coord[:,3]))-1 #max num pixel on y
 #setting up empty molar fractions arrays
-NK_A        = np.zeros((d,c)) #NK/A
-NKC_A       = np.zeros((d,c)) #NKC/A
-Mg_MgFe2    = np.zeros((d,c)) #XMg(Fe2+)
-K_Na        = np.zeros((d,c)) #K/Na
+NK_A,NKC_A,Mg_MgFe2,K_Na                        = [np.zeros((d,c)) for i in range(4)]
 #setting up empty cation fractions arrays
-Mf          = np.zeros((d,c)) #M factor
+Mf                                              = np.zeros((d,c)) #M factor
 #setting up empty anhydrous-based oxides wt.% arrays
-SiO2        = np.zeros((d,c))
-TiO2        = np.zeros((d,c))
-Al2O3       = np.zeros((d,c))
-FeO         = np.zeros((d,c))
-MnO         = np.zeros((d,c))
-MgO         = np.zeros((d,c))
-CaO         = np.zeros((d,c))
-Na2O        = np.zeros((d,c))
-K2O         = np.zeros((d,c))
-P2O5        = np.zeros((d,c))
+SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5   = [np.zeros((d,c)) for i in range(10)]
 #setting up empty Normative Differentiation Index array
-DI          = np.zeros((d,c))
+DI                                              = np.zeros((d,c))
 #setting up empty normative minerals wt.% arrays
-Q           = np.zeros((d,c)) #quartz
-Fsp         = np.zeros((d,c)) #albite + orthoclase
-Ne          = np.zeros((d,c)) #nepheline
+Q,Fsp,Ne,ap,px,ol,ox,mrg                        = [np.zeros((d,c)) for i in range(8)]
 #setting up empty coordinate arrays (mesh-like)
-Nx          = np.zeros((d,c)) #coordinates of pixels (columns)
-Ny          = np.zeros((d,c)) #coordinates of pixels (rows)
+Nx,Ny                                           = [np.zeros((d,c)) for i in range(2)] #coordinates of pixels (columns)
 
-# ..
-
+#employing functions
 data_anhf   = to_anhydrous(data_majors) #calculates anhydrous-base oxide compositions wt.%
 data_molf   = to_mol(data_anhf)         #calculates anhydrous-based oxide compositions mol
 data_catf   = to_cat(data_molf)         #calculates anhydrous-based cation compositions mol
@@ -92,51 +76,56 @@ for j in range (d):
         Q[j,i]        = data_normf[j*c+j+i,0]
         Fsp[j,i]      = data_normf[j*c+j+i,1]+data_normf[j*c+j+i,3]
         Ne[j,i]       = data_normf[j*c+j+i,4]
+        ap[j,i]       = data_normf[j*c+j+i,14]
+        px[j,i]       = data_normf[j*c+j+i,9]+data_normf[j*c+j+i,11]
+        ol[j,i]       = data_normf[j*c+j+i,10]
+        ox[j,i]       = data_normf[j*c+j+i,12]+data_normf[j*c+j+i,13]
         Nx[j,i]       = data_coord[j*c+j+i,2]
         Ny[j,i]       = data_coord[j*c+j+i,3]
 
+filename = input('Please type the file name for the plots:   ')
 #setting up plotting scheme for SiO2, Al2O3, CaO, Na2O, K2O, K/Na
 cm       = 1/2.54
 plt.figure(figsize = (6.5*cm,6.5*cm))
 fig, axs = plt.subplots(2, 3)
-a0       = axs[0,0].imshow(SiO2,cmap='Spectral',vmin=0, vmax=100)
-axs[0,0].set_title("SiO$_{2}$ wt.%")
+a0       = axs[0,0].imshow(Q,cmap='Spectral',vmin=0, vmax=100)
+axs[0,0].set_title("Q wt.%")
 axs[0,0].axis("off")
 fig.colorbar(a0)
-a1       = axs[0,1].imshow(Al2O3,cmap='Spectral',vmin=0, vmax=40)
-axs[0,1].set_title("Al$_{2}$O$_{3}$ wt.%")
+a1       = axs[0,1].imshow(Fsp,cmap='Spectral',vmin=0, vmax=100)
+axs[0,1].set_title("ab + or + an wt.%")
 axs[0,1].axis("off")
 fig.colorbar(a1)
-a2       = axs[0,2].imshow(CaO,cmap='Spectral',vmin=0, vmax=60)
-axs[0,2].set_title("CaO wt.%")
+a2       = axs[0,2].imshow(px,cmap='Spectral',vmin=0, vmax=100)
+axs[0,2].set_title("px wt.%")
 axs[0,2].axis("off")
 fig.colorbar(a2)
-a3       = axs[1,0].imshow(Na2O,cmap='Spectral',vmin=0, vmax=15)
-axs[1,0].set_title("Na$_{2}$O wt.%")
+a3       = axs[1,0].imshow(ol,cmap='Spectral',vmin=0, vmax=100)
+axs[1,0].set_title("ol wt.%")
 axs[1,0].axis("off")
 fig.colorbar(a3)
-a4       = axs[1,1].imshow(K2O,cmap='Spectral',vmin=0, vmax=15)
-axs[1,1].set_title("K$_{2}$O wt.%")
+a4       = axs[1,1].imshow(ox,cmap='Spectral',vmin=0, vmax=100)
+axs[1,1].set_title("mt + ilm wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
-a5       = axs[1,2].imshow(K_Na,cmap='Spectral',vmin=0, vmax=5)
-axs[1,2].set_title("K/Na")
+a5       = axs[1,2].imshow(ap,cmap='Spectral',vmin=0, vmax=100)
+axs[1,2].set_title("ap  wt.%")
 axs[1,2].axis("off")
 fig.colorbar(a5)
 scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
 plt.gca().add_artist(scalebar)
 plt.tight_layout()
-plt.savefig('09028A_M1a.pdf',dpi=600, transparent=True, bbox_inches='tight')
+plt.savefig(filename+'normative.pdf',dpi=600, transparent=True, bbox_inches='tight')
 
 #setting up plotting scheme for TiO2, P2O5, FeO, MgO, differentiation index, M-factor
 plt.figure(figsize=(6.5*cm,6.5*cm))
 fig, axs = plt.subplots(2, 3)
-a0       = axs[0,0].imshow(TiO2,cmap='Spectral',vmin=0, vmax=55)
-axs[0,0].set_title("TiO$_{2}$ wt.%")
+a0       = axs[0,0].imshow(SiO2,cmap='Spectral',vmin=0, vmax=55)
+axs[0,0].set_title("SiO$_{2}$ wt.%")
 axs[0,0].axis("off")
 fig.colorbar(a0)
-a1       = axs[0,1].imshow(P2O5,cmap='Spectral',vmin=0, vmax=45)
-axs[0,1].set_title("P$_{2}$O$_{5}$ wt.%")
+a1       = axs[0,1].imshow(Al2O3,cmap='Spectral',vmin=0, vmax=45)
+axs[0,1].set_title("Al$_{2}$O$_{3}$ wt.%")
 axs[0,1].axis("off")
 fig.colorbar(a1)
 a2       = axs[0,2].imshow(FeO,cmap='Spectral',vmin=0, vmax=100)
@@ -147,12 +136,12 @@ a3       = axs[1,0].imshow(MgO,cmap='Spectral',vmin=0, vmax=45)
 axs[1,0].set_title("MgO wt.%")
 axs[1,0].axis("off")
 fig.colorbar(a3)
-a4       = axs[1,1].imshow(DI,cmap='Spectral',vmin=0, vmax=100)
-axs[1,1].set_title("DI wt.%")
+a4       = axs[1,1].imshow(Na2O,cmap='Spectral',vmin=0, vmax=100)
+axs[1,1].set_title("Na$_{2}$O wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
-a5       = axs[1,2].imshow(Mf,cmap='Spectral',vmin=1, vmax=3)
-axs[1,2].set_title("M$_{f}$")
+a5       = axs[1,2].imshow(P2O5,cmap='Spectral',vmin=1, vmax=3)
+axs[1,2].set_title("P$_{2}$O$_{5}$")
 axs[1,2].axis("off")
 fig.colorbar(a5)
 scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
@@ -171,20 +160,20 @@ a1       = axs[0,1].imshow(NKC_A,cmap='Spectral',vmin=0, vmax=2)
 axs[0,1].set_title("NKC/A")
 axs[0,1].axis("off")
 fig.colorbar(a1)
-a2       = axs[0,2].imshow(Mg_MgFe2,cmap='Spectral',vmin=0, vmax=1)
-axs[0,2].set_title("XMg$_{Fe2+}$")
+a2       = axs[0,2].imshow(Mf,cmap='Spectral',vmin=0, vmax=1)
+axs[0,2].set_title("M$_{f}$")
 axs[0,2].axis("off")
 fig.colorbar(a2)
-a3       = axs[1,0].imshow(Q,cmap='Spectral',vmin=0, vmax=100)
-axs[1,0].set_title("Q$_{norm}$ wt.%")
+a3       = axs[1,0].imshow(Mg_MgFe2,cmap='Spectral',vmin=0, vmax=100)
+axs[1,0].set_title("XMg$_{Fe2+}$")
 axs[1,0].axis("off")
 fig.colorbar(a3)
-a4       = axs[1,1].imshow(Fsp,cmap='Spectral',vmin=0, vmax=100)
-axs[1,1].set_title("Ab+An$_{norm}$ wt.%")
+a4       = axs[1,1].imshow(K_Na,cmap='Spectral',vmin=0, vmax=100)
+axs[1,1].set_title("K/Na")
 axs[1,1].axis("off")
 fig.colorbar(a4)
-a5       = axs[1,2].imshow(Ne,cmap='Spectral',vmin=0, vmax=100)
-axs[1,2].set_title("Ne$_{norm}$")
+a5       = axs[1,2].imshow(DI,cmap='Spectral',vmin=0, vmax=100)
+axs[1,2].set_title("Di")
 axs[1,2].axis("off")
 fig.colorbar(a5)
 scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
