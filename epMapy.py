@@ -32,17 +32,19 @@ data_coord  = df_coord.to_numpy()
 c           = int(max(data_coord[:,2]))-1 #max num pixel on x
 d           = int(max(data_coord[:,3]))-1 #max num pixel on y
 #setting up empty molar fractions arrays
-NK_A,NKC_A,Mg_MgFe2,K_Na                        = [np.zeros((d,c)) for i in range(4)]
+NK_A,NKC_A,Mg_MgFe2,K_Na                                        = [np.zeros((d,c)) for i in range(4)]
 #setting up empty cation fractions arrays
-Mf                                              = np.zeros((d,c)) #M factor
+Mf                                                              = np.zeros((d,c)) #M factor
+#setting up empty oxides wt.% arrays
+SiO2p,TiO2p,Al2O3p,FeOp,MnOp,MgOp,CaOp,Na2Op,K2Op,P2O5p,totp    = [np.zeros((d,c)) for i in range(11)]
 #setting up empty anhydrous-based oxides wt.% arrays
-SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5   = [np.zeros((d,c)) for i in range(10)]
+SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5                   = [np.zeros((d,c)) for i in range(10)]
 #setting up empty Normative Differentiation Index array
-DI                                              = np.zeros((d,c))
+DI                                                              = np.zeros((d,c))
 #setting up empty normative minerals wt.% arrays
-Q,Fsp,Ne,ap,px,ol,ox,mrg                        = [np.zeros((d,c)) for i in range(8)]
+Q,Fsp,Ne,ap,px,ol,ox,mrg                                        = [np.zeros((d,c)) for i in range(8)]
 #setting up empty coordinate arrays (mesh-like)
-Nx,Ny                                           = [np.zeros((d,c)) for i in range(2)] #coordinates of pixels (columns)
+Nx,Ny                                                           = [np.zeros((d,c)) for i in range(2)] #coordinates of pixels (columns)
 
 #employing functions
 data_anhf   = to_anhydrous(data_majors) #calculates anhydrous-base oxide compositions wt.%
@@ -54,34 +56,45 @@ data_normf  = norm_calc(data_molf2) #calculates normative mineralogy
 #filling up empty arrays
 for j in range (d):
     for i in range (c):
-        SiO2[j,i]     = data_anhf[j*c+j+i,0]
-        TiO2[j,i]     = data_anhf[j*c+j+i,1]
-        Al2O3[j,i]    = data_anhf[j*c+j+i,2]
-        FeO[j,i]      = data_anhf[j*c+j+i,3]
-        MnO[j,i]      = data_anhf[j*c+j+i,4]
-        MgO[j,i]      = data_anhf[j*c+j+i,5]
-        CaO[j,i]      = data_anhf[j*c+j+i,6]
-        Na2O[j,i]     = data_anhf[j*c+j+i,7]
-        K2O[j,i]      = data_anhf[j*c+j+i,8]
-        P2O5[j,i]     = data_anhf[j*c+j+i,9]
-        Mf[j,i]       = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
+        SiO2p[j,i]     = data_majors[j*c+j+i,0]
+        TiO2p[j,i]     = data_majors[j*c+j+i,1]
+        Al2O3p[j,i]    = data_majors[j*c+j+i,2]
+        FeOp[j,i]      = data_majors[j*c+j+i,3]
+        MnOp[j,i]      = data_majors[j*c+j+i,4]
+        MgOp[j,i]      = data_majors[j*c+j+i,5]
+        CaOp[j,i]      = data_majors[j*c+j+i,6]
+        Na2Op[j,i]     = data_majors[j*c+j+i,7]
+        K2Op[j,i]      = data_majors[j*c+j+i,8]
+        P2O5p[j,i]     = data_majors[j*c+j+i,9]
+        totp[j,i]      = data_majors[j*c+j+i,-1]
+        SiO2[j,i]      = data_anhf[j*c+j+i,0]
+        TiO2[j,i]      = data_anhf[j*c+j+i,1]
+        Al2O3[j,i]     = data_anhf[j*c+j+i,2]
+        FeO[j,i]       = data_anhf[j*c+j+i,3]
+        MnO[j,i]       = data_anhf[j*c+j+i,4]
+        MgO[j,i]       = data_anhf[j*c+j+i,5]
+        CaO[j,i]       = data_anhf[j*c+j+i,6]
+        Na2O[j,i]      = data_anhf[j*c+j+i,7]
+        K2O[j,i]       = data_anhf[j*c+j+i,8]
+        P2O5[j,i]      = data_anhf[j*c+j+i,9]
+        Mf[j,i]        = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
                          (data_catf[j*(c+1)+i,6]*2))/(data_catf[j*(c+1)+i,0]*data_catf[j*(c+1)+i,2])
-        NK_A[j,i]     = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
-        NKC_A[j,i]    = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8]+
+        NK_A[j,i]      = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
+        NKC_A[j,i]     = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8]+
                          data_molf[j*(c+1)+i,6])/data_molf[j*(c+1)+i,2]
-        Mg_MgFe2[j,i] = data_molf2[j*(c+1)+i,6]/(data_molf2[j*(c+1)+i,4]+data_molf2[j*(c+1)+i,6]+
+        Mg_MgFe2[j,i]  = data_molf2[j*(c+1)+i,6]/(data_molf2[j*(c+1)+i,4]+data_molf2[j*(c+1)+i,6]+
                                                  data_molf2[j*(c+1)+i,5])
-        K_Na[j,i]     = (data_anhf[j*c+j+i,8]*8302)/(data_anhf[j*c+j+i,7]*7419)
-        DI[j,i]       = np.sum(data_normf[j*c+j+i,0:5])+data_normf[j*c+j+i,8]
-        Q[j,i]        = data_normf[j*c+j+i,0]
-        Fsp[j,i]      = data_normf[j*c+j+i,1]+data_normf[j*c+j+i,3]
-        Ne[j,i]       = data_normf[j*c+j+i,4]
-        ap[j,i]       = data_normf[j*c+j+i,14]
-        px[j,i]       = data_normf[j*c+j+i,9]+data_normf[j*c+j+i,11]
-        ol[j,i]       = data_normf[j*c+j+i,10]
-        ox[j,i]       = data_normf[j*c+j+i,12]+data_normf[j*c+j+i,13]
-        Nx[j,i]       = data_coord[j*c+j+i,2]
-        Ny[j,i]       = data_coord[j*c+j+i,3]
+        K_Na[j,i]      = (data_anhf[j*c+j+i,8]*8302)/(data_anhf[j*c+j+i,7]*7419)
+        DI[j,i]        = np.sum(data_normf[j*c+j+i,0:5])+data_normf[j*c+j+i,8]
+        Q[j,i]         = data_normf[j*c+j+i,0]
+        Fsp[j,i]       = data_normf[j*c+j+i,1]+data_normf[j*c+j+i,3]
+        Ne[j,i]        = data_normf[j*c+j+i,4]
+        ap[j,i]        = data_normf[j*c+j+i,14]
+        px[j,i]        = data_normf[j*c+j+i,9]+data_normf[j*c+j+i,11]
+        ol[j,i]        = data_normf[j*c+j+i,10]
+        ox[j,i]        = data_normf[j*c+j+i,12]+data_normf[j*c+j+i,13]
+        Nx[j,i]        = data_coord[j*c+j+i,2]
+        Ny[j,i]        = data_coord[j*c+j+i,3]
 
 
 #setting up plotting scheme for SiO2, Al2O3, CaO, Na2O, K2O, K/Na
@@ -140,7 +153,38 @@ a4       = axs[1,1].imshow(Na2O,cmap='Spectral_r',vmin=0, vmax=15)
 axs[1,1].set_title("Na$_{2}$O wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
-a5       = axs[1,2].imshow(P2O5,cmap='Spectral_r',vmin=1, vmax=50)
+a5       = axs[1,2].imshow(P2O5,cmap='Spectral_r',vmin=1, vmax=100)
+axs[1,2].set_title("P$_{2}$O$_{5}$")
+axs[1,2].axis("off")
+fig.colorbar(a5)
+scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
+plt.gca().add_artist(scalebar)
+plt.tight_layout()
+plt.savefig(filename+'_oxides_anh.pdf',dpi=600, transparent=True, bbox_inches='tight')
+
+plt.figure(figsize=(6.5*cm,6.5*cm))
+fig, axs = plt.subplots(2, 3)
+a0       = axs[0,0].imshow(SiO2p,cmap='Spectral_r',vmin=0, vmax=100)
+axs[0,0].set_title("SiO$_{2}$ wt.%")
+axs[0,0].axis("off")
+fig.colorbar(a0)
+a1       = axs[0,1].imshow(Al2O3p,cmap='Spectral_r',vmin=0, vmax=45)
+axs[0,1].set_title("Al$_{2}$O$_{3}$ wt.%")
+axs[0,1].axis("off")
+fig.colorbar(a1)
+a2       = axs[0,2].imshow(FeOp,cmap='Spectral_r',vmin=0, vmax=100)
+axs[0,2].set_title("FeO wt.%")
+axs[0,2].axis("off")
+fig.colorbar(a2)
+a3       = axs[1,0].imshow(MgOp,cmap='Spectral_r',vmin=0, vmax=45)
+axs[1,0].set_title("MgO wt.%")
+axs[1,0].axis("off")
+fig.colorbar(a3)
+a4       = axs[1,1].imshow(Na2Op,cmap='Spectral_r',vmin=0, vmax=15)
+axs[1,1].set_title("Na$_{2}$O wt.%")
+axs[1,1].axis("off")
+fig.colorbar(a4)
+a5       = axs[1,2].imshow(totp,cmap='Spectral_r',vmin=1, vmax=50)
 axs[1,2].set_title("P$_{2}$O$_{5}$")
 axs[1,2].axis("off")
 fig.colorbar(a5)
@@ -148,6 +192,7 @@ scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
 plt.gca().add_artist(scalebar)
 plt.tight_layout()
 plt.savefig(filename+'_oxides.pdf',dpi=600, transparent=True, bbox_inches='tight')
+
 #setting up plotting scheme for NK/A, NKC/A, XMg, normative Q, normative ab+or, normative Ne
 cm       = 1/2.54
 plt.figure(figsize=(6.5*cm,6.5*cm))
