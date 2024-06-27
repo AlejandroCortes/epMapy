@@ -96,6 +96,19 @@ for j in range (d):
         Nx[j,i]        = data_coord[j*c+j+i,2]
         Ny[j,i]        = data_coord[j*c+j+i,3]
 
+for j in range (d):
+    for i in range (c):
+        if (Q[j,i] <20) & (Fsp[j,i]>60):
+            mrg[j,i]=1
+        elif (Q[j,i] >80):
+            mrg[j,i]=2
+        elif (ox[j,i] >60):
+            mrg[j,i]=3
+        elif (px[j,i] >70):
+            mrg[j,i]=4
+        elif (ap[j,i] >80):
+            mrg[j,i]=5
+
 
 #setting up plotting scheme for SiO2, Al2O3, CaO, Na2O, K2O, K/Na
 cm       = 1/2.54
@@ -201,8 +214,8 @@ a0       = axs[0,0].imshow(NK_A,cmap='Spectral_r',vmin=0, vmax=2)
 axs[0,0].set_title("NK/A")
 axs[0,0].axis("off")
 fig.colorbar(a0)
-a1       = axs[0,1].imshow(NKC_A,cmap='Spectral_r',vmin=0, vmax=2)
-axs[0,1].set_title("NKC/A")
+a1       = axs[0,1].imshow(mrg,cmap='tab10')
+axs[0,1].set_title("PhaseMap")
 axs[0,1].axis("off")
 fig.colorbar(a1)
 a2       = axs[0,2].imshow(Mf,cmap='Spectral_r',vmin=0, vmax=5)
@@ -225,6 +238,8 @@ scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
 plt.gca().add_artist(scalebar)
 plt.tight_layout()
 plt.savefig(filename+'_indexes.pdf',dpi=600, transparent=True, bbox_inches='tight')
+
+
 #Reshaping matrix into 1D-arrays and deleting nan values
 K_Na_new = K_Na.reshape([1, c*d])[~np.isnan(K_Na.reshape([1, c*d]))]
 Mf_new = Mf.reshape([1, c*d])[~np.isnan(K_Na.reshape([1, c*d]))]
