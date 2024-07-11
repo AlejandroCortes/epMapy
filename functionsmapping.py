@@ -2,6 +2,14 @@
 import numpy as np
 import pandas as pd
 
+def clean_data(X):
+    a   = len(X[:,0]) #num of data points
+    b   = len(X[0,:]) #num of oxides + total
+    clean = np.copy(X)  #copies the input to avoid overwriting
+    for i in range (a):
+        if (clean[i,-1] <50):
+            clean[i,:] = clean[i,:]*0 #normalising data to 100%
+    return clean
 #This function takes major oxide compositions and normalise them to 100%
 def to_anhydrous(X):
     a   = len(X[:,0]) #num of data points

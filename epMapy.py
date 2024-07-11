@@ -38,7 +38,7 @@ Mf                                                              = np.zeros((d,c)
 #setting up empty oxides wt.% arrays
 SiO2p,TiO2p,Al2O3p,FeOp,MnOp,MgOp,CaOp,Na2Op,K2Op,P2O5p,totp    = [np.zeros((d,c)) for i in range(11)]
 #setting up empty anhydrous-based oxides wt.% arrays
-SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5                   = [np.zeros((d,c)) for i in range(10)]
+SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5,tot                   = [np.zeros((d,c)) for i in range(10)]
 #setting up empty Normative Differentiation Index array
 DI                                                              = np.zeros((d,c))
 #setting up empty normative minerals wt.% arrays
@@ -46,7 +46,9 @@ Q,Fsp,Ne,ap,px,ol,ox,mrg                                        = [np.zeros((d,c
 #setting up empty coordinate arrays (mesh-like)
 Nx,Ny                                                           = [np.zeros((d,c)) for i in range(2)] #coordinates of pixels (columns)
 
+
 #employing functions
+data_majors = clean_data(data_majors)   #cleaning holes and cracks that retrive very low totals
 data_anhf   = to_anhydrous(data_majors) #calculates anhydrous-base oxide compositions wt.%
 data_molf   = to_mol(data_anhf)         #calculates anhydrous-based oxide compositions mol
 data_catf   = to_cat(data_molf)         #calculates anhydrous-based cation compositions mol
@@ -77,6 +79,7 @@ for j in range (d):
         Na2O[j,i]      = data_anhf[j*c+j+i,7]
         K2O[j,i]       = data_anhf[j*c+j+i,8]
         P2O5[j,i]      = data_anhf[j*c+j+i,9]
+        tot[i,j]       = data_anhf[j*c+j+i,-1]
         Mf[j,i]        = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
                          (data_catf[j*(c+1)+i,6]*2))/(data_catf[j*(c+1)+i,0]*data_catf[j*(c+1)+i,2])
         NK_A[j,i]      = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
