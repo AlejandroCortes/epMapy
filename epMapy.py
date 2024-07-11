@@ -60,29 +60,29 @@ data_normf  = norm_calc(data_molf2) #calculates normative mineralogy
 #filling up empty arrays
 for j in range (d):
     for i in range (c):
-        SiO2p[j,i]     = data_majors[j*c+j+i,0]
-        TiO2p[j,i]     = data_majors[j*c+j+i,1]
-        Al2O3p[j,i]    = data_majors[j*c+j+i,2]
-        FeOp[j,i]      = data_majors[j*c+j+i,3]
-        MnOp[j,i]      = data_majors[j*c+j+i,4]
-        MgOp[j,i]      = data_majors[j*c+j+i,5]
-        CaOp[j,i]      = data_majors[j*c+j+i,6]
-        Na2Op[j,i]     = data_majors[j*c+j+i,7]
-        K2Op[j,i]      = data_majors[j*c+j+i,8]
-        P2O5p[j,i]     = data_majors[j*c+j+i,9]
-        totp[j,i]      = data_majors[j*c+j+i,-1]
-        SiO2[j,i]      = data_anhf[j*c+j+i,0]
-        TiO2[j,i]      = data_anhf[j*c+j+i,1]
-        Al2O3[j,i]     = data_anhf[j*c+j+i,2]
-        FeO[j,i]       = data_anhf[j*c+j+i,3]
-        MnO[j,i]       = data_anhf[j*c+j+i,4]
-        MgO[j,i]       = data_anhf[j*c+j+i,5]
-        CaO[j,i]       = data_anhf[j*c+j+i,6]
-        Na2O[j,i]      = data_anhf[j*c+j+i,7]
-        K2O[j,i]       = data_anhf[j*c+j+i,8]
-        P2O5[j,i]      = data_anhf[j*c+j+i,9]
-        tot[j,i]       = data_anhf[j*c+j+i,-1]
         if data_majors[j*c+j+i,-1]>0:
+            SiO2p[j,i]     = data_majors[j*c+j+i,0]
+            TiO2p[j,i]     = data_majors[j*c+j+i,1]
+            Al2O3p[j,i]    = data_majors[j*c+j+i,2]
+            FeOp[j,i]      = data_majors[j*c+j+i,3]
+            MnOp[j,i]      = data_majors[j*c+j+i,4]
+            MgOp[j,i]      = data_majors[j*c+j+i,5]
+            CaOp[j,i]      = data_majors[j*c+j+i,6]
+            Na2Op[j,i]     = data_majors[j*c+j+i,7]
+            K2Op[j,i]      = data_majors[j*c+j+i,8]
+            P2O5p[j,i]     = data_majors[j*c+j+i,9]
+            totp[j,i]      = data_majors[j*c+j+i,-1]
+            SiO2[j,i]      = data_anhf[j*c+j+i,0]
+            TiO2[j,i]      = data_anhf[j*c+j+i,1]
+            Al2O3[j,i]     = data_anhf[j*c+j+i,2]
+            FeO[j,i]       = data_anhf[j*c+j+i,3]
+            MnO[j,i]       = data_anhf[j*c+j+i,4]
+            MgO[j,i]       = data_anhf[j*c+j+i,5]
+            CaO[j,i]       = data_anhf[j*c+j+i,6]
+            Na2O[j,i]      = data_anhf[j*c+j+i,7]
+            K2O[j,i]       = data_anhf[j*c+j+i,8]
+            P2O5[j,i]      = data_anhf[j*c+j+i,9]
+            tot[j,i]       = data_anhf[j*c+j+i,-1]
             Mf[j,i]        = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
                              (data_catf[j*(c+1)+i,6]*2))/(data_catf[j*(c+1)+i,0]*data_catf[j*(c+1)+i,2])
             NK_A[j,i]      = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
@@ -91,20 +91,59 @@ for j in range (d):
             Mg_MgFe2[j,i]  = data_molf2[j*(c+1)+i,6]/(data_molf2[j*(c+1)+i,4]+data_molf2[j*(c+1)+i,6]+
                                                      data_molf2[j*(c+1)+i,5])
             K_Na[j,i]      = (data_anhf[j*c+j+i,8]*8302)/(data_anhf[j*c+j+i,7]*7419)
-        DI[j,i]        = np.sum(data_normf[j*c+j+i,0:5])+data_normf[j*c+j+i,8]
-        Q[j,i]         = data_normf[j*c+j+i,0]
-        Fsp[j,i]       = data_normf[j*c+j+i,1]+data_normf[j*c+j+i,3]
-        Ne[j,i]        = data_normf[j*c+j+i,4]
-        ap[j,i]        = data_normf[j*c+j+i,14]
-        px[j,i]        = data_normf[j*c+j+i,9]+data_normf[j*c+j+i,11]
-        ol[j,i]        = data_normf[j*c+j+i,10]
-        ox[j,i]        = data_normf[j*c+j+i,12]+data_normf[j*c+j+i,13]
-        Nx[j,i]        = data_coord[j*c+j+i,2]
-        Ny[j,i]        = data_coord[j*c+j+i,3]
+            DI[j,i]        = np.sum(data_normf[j*c+j+i,0:5])+data_normf[j*c+j+i,8]
+            Q[j,i]         = data_normf[j*c+j+i,0]
+            Fsp[j,i]       = data_normf[j*c+j+i,1]+data_normf[j*c+j+i,3]
+            Ne[j,i]        = data_normf[j*c+j+i,4]
+            ap[j,i]        = data_normf[j*c+j+i,14]
+            px[j,i]        = data_normf[j*c+j+i,9]+data_normf[j*c+j+i,11]
+            ol[j,i]        = data_normf[j*c+j+i,10]
+            ox[j,i]        = data_normf[j*c+j+i,12]+data_normf[j*c+j+i,13]
+            Nx[j,i]        = data_coord[j*c+j+i,2]
+            Ny[j,i]        = data_coord[j*c+j+i,3]
+        else:
+            SiO2p[j,i]     = 300
+            TiO2p[j,i]     = 300
+            Al2O3p[j,i]    = 300
+            FeOp[j,i]      = 300
+            MnOp[j,i]      = 300
+            MgOp[j,i]      = 300
+            CaOp[j,i]      = 300
+            Na2Op[j,i]     = 300
+            K2Op[j,i]      = 300
+            P2O5p[j,i]     = 300
+            totp[j,i]      = -1
+            SiO2[j,i]      = 300
+            TiO2[j,i]      = 300
+            Al2O3[j,i]     = 300
+            FeO[j,i]       = 300
+            MnO[j,i]       = 300
+            MgO[j,i]       = 300
+            CaO[j,i]       = 300
+            Na2O[j,i]      = 300
+            K2O[j,i]       = 300
+            P2O5[j,i]      = 300
+            tot[j,i]       = -1
+            Mf[j,i]        = -1
+            NK_A[j,i]      = 300
+            NKC_A[j,i]     = 300
+            Mg_MgFe2[j,i]  = 300
+            K_Na[j,i]      = -1
+            DI[j,i]        = 300
+            Q[j,i]         = 300
+            Fsp[j,i]       = 300
+            Ne[j,i]        = 300
+            ap[j,i]        = 300
+            px[j,i]        = 300
+            ol[j,i]        = 300
+            ox[j,i]        = 300
+            Nx[j,i]        = 300
+            Ny[j,i]        = 300
+
 
 for j in range (d):
     for i in range (c):
-        if (Q[j,i] <20) & (Fsp[j,i]>60):
+        if (Q[j,i] <30) & (Fsp[j,i]>60):
             mrg[j,i]=1
         elif (Q[j,i] >80):
             mrg[j,i]=2
@@ -120,26 +159,32 @@ cm       = 1/2.54
 plt.figure(figsize = (6.5*cm,6.5*cm))
 fig, axs = plt.subplots(2, 3)
 a0       = axs[0,0].imshow(Q,cmap='Spectral_r',vmin=0, vmax=100)
+a0.cmap.set_over('black')
 axs[0,0].set_title("Q wt.%")
 axs[0,0].axis("off")
 fig.colorbar(a0)
 a1       = axs[0,1].imshow(Fsp,cmap='Spectral_r',vmin=0, vmax=100)
+a1.cmap.set_over('black')
 axs[0,1].set_title("ab + or + an wt.%")
 axs[0,1].axis("off")
 fig.colorbar(a1)
 a2       = axs[0,2].imshow(px,cmap='Spectral_r',vmin=0, vmax=100)
+a2.cmap.set_over('black')
 axs[0,2].set_title("px wt.%")
 axs[0,2].axis("off")
 fig.colorbar(a2)
 a3       = axs[1,0].imshow(ol,cmap='Spectral_r',vmin=0, vmax=100)
+a3.cmap.set_over('black')
 axs[1,0].set_title("ol wt.%")
 axs[1,0].axis("off")
 fig.colorbar(a3)
 a4       = axs[1,1].imshow(ox,cmap='Spectral_r',vmin=0, vmax=100)
+a4.cmap.set_over('black')
 axs[1,1].set_title("mt + ilm wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
 a5       = axs[1,2].imshow(ap,cmap='Spectral_r',vmin=0, vmax=100)
+a5.cmap.set_over('black')
 axs[1,2].set_title("ap  wt.%")
 axs[1,2].axis("off")
 fig.colorbar(a5)
@@ -152,26 +197,32 @@ plt.savefig(filename+'_normative.pdf',dpi=600, transparent=True, bbox_inches='ti
 plt.figure(figsize=(6.5*cm,6.5*cm))
 fig, axs = plt.subplots(2, 3)
 a0       = axs[0,0].imshow(SiO2,cmap='Spectral_r',vmin=0, vmax=100)
+a0.cmap.set_over('black')
 axs[0,0].set_title("SiO$_{2}$ wt.%")
 axs[0,0].axis("off")
 fig.colorbar(a0)
 a1       = axs[0,1].imshow(Al2O3,cmap='Spectral_r',vmin=0, vmax=45)
+a1.cmap.set_over('black')
 axs[0,1].set_title("Al$_{2}$O$_{3}$ wt.%")
 axs[0,1].axis("off")
 fig.colorbar(a1)
 a2       = axs[0,2].imshow(FeO,cmap='Spectral_r',vmin=0, vmax=100)
+a2.cmap.set_over('black')
 axs[0,2].set_title("FeO wt.%")
 axs[0,2].axis("off")
 fig.colorbar(a2)
 a3       = axs[1,0].imshow(MgO,cmap='Spectral_r',vmin=0, vmax=45)
+a3.cmap.set_over('black')
 axs[1,0].set_title("MgO wt.%")
 axs[1,0].axis("off")
 fig.colorbar(a3)
 a4       = axs[1,1].imshow(Na2O,cmap='Spectral_r',vmin=0, vmax=15)
+a4.cmap.set_over('black')
 axs[1,1].set_title("Na$_{2}$O wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
-a5       = axs[1,2].imshow(P2O5,cmap='Spectral_r',vmin=1, vmax=100)
+a5       = axs[1,2].imshow(P2O5,cmap='Spectral_r',vmin=0, vmax=60)
+a5.cmap.set_over('black')
 axs[1,2].set_title("P$_{2}$O$_{5}$")
 axs[1,2].axis("off")
 fig.colorbar(a5)
@@ -183,26 +234,32 @@ plt.savefig(filename+'_oxides_anh.pdf',dpi=600, transparent=True, bbox_inches='t
 plt.figure(figsize=(6.5*cm,6.5*cm))
 fig, axs = plt.subplots(2, 3)
 a0       = axs[0,0].imshow(SiO2p,cmap='Spectral_r',vmin=0, vmax=100)
+a0.cmap.set_over('black')
 axs[0,0].set_title("SiO$_{2}$ wt.%")
 axs[0,0].axis("off")
 fig.colorbar(a0)
 a1       = axs[0,1].imshow(Al2O3p,cmap='Spectral_r',vmin=0, vmax=45)
+a1.cmap.set_over('black')
 axs[0,1].set_title("Al$_{2}$O$_{3}$ wt.%")
 axs[0,1].axis("off")
 fig.colorbar(a1)
 a2       = axs[0,2].imshow(FeOp,cmap='Spectral_r',vmin=0, vmax=100)
+a2.cmap.set_over('black')
 axs[0,2].set_title("FeO wt.%")
 axs[0,2].axis("off")
 fig.colorbar(a2)
 a3       = axs[1,0].imshow(MgOp,cmap='Spectral_r',vmin=0, vmax=45)
+a3.cmap.set_over('black')
 axs[1,0].set_title("MgO wt.%")
 axs[1,0].axis("off")
 fig.colorbar(a3)
 a4       = axs[1,1].imshow(Na2Op,cmap='Spectral_r',vmin=0, vmax=15)
+a4.cmap.set_over('black')
 axs[1,1].set_title("Na$_{2}$O wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
 a5       = axs[1,2].imshow(totp,cmap='Spectral_r',vmin=1, vmax=100)
+a5.cmap.set_under('black')
 axs[1,2].set_title("Total wt.%")
 axs[1,2].axis("off")
 fig.colorbar(a5)
@@ -216,26 +273,32 @@ cm       = 1/2.54
 plt.figure(figsize=(6.5*cm,6.5*cm))
 fig, axs = plt.subplots(2, 3)
 a0       = axs[0,0].imshow(NK_A,cmap='Spectral_r',vmin=0, vmax=2)
+a0.cmap.set_over('black')
 axs[0,0].set_title("NK/A")
 axs[0,0].axis("off")
 fig.colorbar(a0)
 a1       = axs[0,1].imshow(mrg,cmap='tab10')
+a1.cmap.set_over('black')
 axs[0,1].set_title("PhaseMap")
 axs[0,1].axis("off")
 fig.colorbar(a1)
 a2       = axs[0,2].imshow(Mf,cmap='Spectral_r',vmin=0, vmax=5)
+a2.cmap.set_under('black')
 axs[0,2].set_title("M$_{f}$")
 axs[0,2].axis("off")
 fig.colorbar(a2)
 a3       = axs[1,0].imshow(Mg_MgFe2,cmap='Spectral_r',vmin=0, vmax=1)
+a3.cmap.set_over('black')
 axs[1,0].set_title("XMg$_{Fe2+}$")
 axs[1,0].axis("off")
 fig.colorbar(a3)
 a4       = axs[1,1].imshow(K_Na,cmap='Spectral_r',vmin=0, vmax=5)
+a4.cmap.set_under('black')
 axs[1,1].set_title("K/Na")
 axs[1,1].axis("off")
 fig.colorbar(a4)
 a5       = axs[1,2].imshow(DI,cmap='Spectral_r',vmin=0, vmax=100)
+a5.cmap.set_over('black')
 axs[1,2].set_title("Di")
 axs[1,2].axis("off")
 fig.colorbar(a5)
@@ -304,32 +367,38 @@ cm       = 1/2.54
 plt.figure(figsize = (6.5*cm,6.5*cm))
 fig, axs = plt.subplots(2, 3)
 a0       = axs[0,0].imshow(SiO2,cmap='Spectral_r',vmin=0, vmax=100)
-axs[0,0].scatter(Nx_new3,Ny_new3,c='k',marker='d',s=1)
+a0.cmap.set_over('black')
+axs[0,0].scatter(Nx_new3,Ny_new3,c='k',marker='o',edgecolors="white",linewidths=0.25,s=2)
 axs[0,0].set_title("SiO$_{2}$ wt.%")
 axs[0,0].axis("off")
 fig.colorbar(a0)
 a1       = axs[0,1].imshow(Al2O3,cmap='Spectral_r',vmin=0, vmax=40)
-axs[0,1].scatter(Nx_new3,Ny_new3,c='k',marker='d',s=1)
+a1.cmap.set_over('black')
+axs[0,1].scatter(Nx_new3,Ny_new3,c='k',marker='o',edgecolors="white",linewidths=0.25,s=2)
 axs[0,1].set_title("Al$_{2}$O$_{3}$ wt.%")
 axs[0,1].axis("off")
 fig.colorbar(a1)
 a2       = axs[0,2].imshow(CaO,cmap='Spectral_r',vmin=0, vmax=60)
-axs[0,2].scatter(Nx_new3,Ny_new3,c='k',marker='d',s=1)
+a2.cmap.set_over('black')
+axs[0,2].scatter(Nx_new3,Ny_new3,c='k',marker='o',edgecolors="white",linewidths=0.25,s=2)
 axs[0,2].set_title("CaO wt.%")
 axs[0,2].axis("off")
 fig.colorbar(a2)
 a3       = axs[1,0].imshow(Na2O,cmap='Spectral_r',vmin=0, vmax=15)
-axs[1,0].scatter(Nx_new3,Ny_new3,c='k',marker='d',s=1)
+a3.cmap.set_over('black')
+axs[1,0].scatter(Nx_new3,Ny_new3,c='k',marker='o',edgecolors="white",linewidths=0.25,s=2)
 axs[1,0].set_title("Na$_{2}$O wt.%")
 axs[1,0].axis("off")
 fig.colorbar(a3)
 a4       = axs[1,1].imshow(K2O,cmap='Spectral_r',vmin=0, vmax=15)
-axs[1,1].scatter(Nx_new3,Ny_new3,c='k',marker='d',s=1)
+a4.cmap.set_over('black')
+axs[1,1].scatter(Nx_new3,Ny_new3,c='k',marker='o',edgecolors="white",linewidths=0.25,s=2)
 axs[1,1].set_title("K$_{2}$O wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
 a5       = axs[1,2].imshow(K_Na,cmap='Spectral_r',vmin=0, vmax=5)
-axs[1,2].scatter(Nx_new3,Ny_new3,c='k',marker='d',s=1)
+a5.cmap.set_under('black')
+axs[1,2].scatter(Nx_new3,Ny_new3,c='k',marker='o',edgecolors="white",linewidths=0.25,s=2)
 axs[1,2].set_title("K/Na")
 axs[1,2].axis("off")
 fig.colorbar(a5)
