@@ -4,6 +4,7 @@ import numpy as np #math functions as pi,e,random,arrays, etc
 import matplotlib.pyplot as plt #default plotting library
 import pandas as pd #for printing nice tables (pd.DataFrame)
 import seaborn as sbn #extra version of plt
+import time 
 plt.rcParams['pdf.fonttype'] = 42 #to use Type 42 (a.k.a. TrueType) fonts for PDF files
 plt.rcParams['ps.fonttype']  = 42 #to use Type 42 (a.k.a. TrueType) fonts for PostScript files
 plt.rcParams['svg.fonttype'] = 'none' #for neither embedding the font nor rendering the text as path
@@ -11,13 +12,14 @@ plt.rcParams.update({'font.size': 7}) #defined font size
 plt.rcParams['figure.dpi']   = 200 #increases the quality of images
 import mpltern #to plot ternary diagrams
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
-from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3 #importing external functions
+from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data #importing external functions
 
 print('\n\nThis script allows plotting EPMA quantitative maps and do calculations with the data within.\nPlease be aware that this script is designed for the output file obtained with CalcImage (J. Donovan).\nThe input file for this script is a .xslx file, so you should convert .DAT to .xslx before\nat least the following column names (case and character sensitive):\nX,Y,NX,NY,NXY,SiO2 WT%,TiO2 WT%,Al2O3 WT%,FeO WT%,MnO WT%,MgO WT%,CaO WT%,Na2O WT%,K2O WT%,P2O5 WT%,Total\nX and Y: x-y coordinates EPMA position, NX and NY: pixel number in x-y (matrix)\nNXY: consecutive pixel number, all the rest values are weight percents including the total.\nUnfortunatelly this script does not work with more oxides or halogens at the moment, but can be easily\nmodified to do so by the user. Just keep in mind to also modify the external functions that are being used.\n')
 
 #Reading excel file with major and trace elements in glasses
 name = input('Please type the path where the data file is located:   ')
 filename = input('Please type the file name for the plots:   ')
+st = time.time()
 #data        = pd.read_excel (r'09028A_M1.xlsx',skiprows=[0])
 data        = pd.read_excel (name,)
 #Creating two arrays (composition and coordinates) using data from excel file using the name of the columns
@@ -38,7 +40,7 @@ Mf                                                              = np.zeros((d,c)
 #setting up empty oxides wt.% arrays
 SiO2p,TiO2p,Al2O3p,FeOp,MnOp,MgOp,CaOp,Na2Op,K2Op,P2O5p,totp    = [np.zeros((d,c)) for i in range(11)]
 #setting up empty anhydrous-based oxides wt.% arrays
-SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5,tot                   = [np.zeros((d,c)) for i in range(10)]
+SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5,tot               = [np.zeros((d,c)) for i in range(11)]
 #setting up empty Normative Differentiation Index array
 DI                                                              = np.zeros((d,c))
 #setting up empty normative minerals wt.% arrays
@@ -79,15 +81,16 @@ for j in range (d):
         Na2O[j,i]      = data_anhf[j*c+j+i,7]
         K2O[j,i]       = data_anhf[j*c+j+i,8]
         P2O5[j,i]      = data_anhf[j*c+j+i,9]
-        tot[i,j]       = data_anhf[j*c+j+i,-1]
-        Mf[j,i]        = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
-                         (data_catf[j*(c+1)+i,6]*2))/(data_catf[j*(c+1)+i,0]*data_catf[j*(c+1)+i,2])
-        NK_A[j,i]      = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
-        NKC_A[j,i]     = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8]+
-                         data_molf[j*(c+1)+i,6])/data_molf[j*(c+1)+i,2]
-        Mg_MgFe2[j,i]  = data_molf2[j*(c+1)+i,6]/(data_molf2[j*(c+1)+i,4]+data_molf2[j*(c+1)+i,6]+
-                                                 data_molf2[j*(c+1)+i,5])
-        K_Na[j,i]      = (data_anhf[j*c+j+i,8]*8302)/(data_anhf[j*c+j+i,7]*7419)
+        tot[j,i]       = data_anhf[j*c+j+i,-1]
+        if data_majors[j*c+j+i,-1]>0:
+            Mf[j,i]        = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
+                             (data_catf[j*(c+1)+i,6]*2))/(data_catf[j*(c+1)+i,0]*data_catf[j*(c+1)+i,2])
+            NK_A[j,i]      = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
+            NKC_A[j,i]     = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8]+
+                             data_molf[j*(c+1)+i,6])/data_molf[j*(c+1)+i,2]
+            Mg_MgFe2[j,i]  = data_molf2[j*(c+1)+i,6]/(data_molf2[j*(c+1)+i,4]+data_molf2[j*(c+1)+i,6]+
+                                                     data_molf2[j*(c+1)+i,5])
+            K_Na[j,i]      = (data_anhf[j*c+j+i,8]*8302)/(data_anhf[j*c+j+i,7]*7419)
         DI[j,i]        = np.sum(data_normf[j*c+j+i,0:5])+data_normf[j*c+j+i,8]
         Q[j,i]         = data_normf[j*c+j+i,0]
         Fsp[j,i]       = data_normf[j*c+j+i,1]+data_normf[j*c+j+i,3]
@@ -111,7 +114,6 @@ for j in range (d):
             mrg[j,i]=4
         elif (ap[j,i] >80):
             mrg[j,i]=5
-
 
 #setting up plotting scheme for SiO2, Al2O3, CaO, Na2O, K2O, K/Na
 cm       = 1/2.54
@@ -200,8 +202,8 @@ a4       = axs[1,1].imshow(Na2Op,cmap='Spectral_r',vmin=0, vmax=15)
 axs[1,1].set_title("Na$_{2}$O wt.%")
 axs[1,1].axis("off")
 fig.colorbar(a4)
-a5       = axs[1,2].imshow(totp,cmap='Spectral_r',vmin=1, vmax=50)
-axs[1,2].set_title("P$_{2}$O$_{5}$")
+a5       = axs[1,2].imshow(totp,cmap='Spectral_r',vmin=1, vmax=100)
+axs[1,2].set_title("Total wt.%")
 axs[1,2].axis("off")
 fig.colorbar(a5)
 scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
@@ -335,3 +337,6 @@ scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
 plt.gca().add_artist(scalebar)
 plt.tight_layout()
 plt.savefig(filename+'_rastered2.pdf',dpi=600, transparent=True, bbox_inches='tight')
+et = time.time()
+elapsed_time = et - st
+print('Execution time:', elapsed_time, 'seconds')

@@ -7,7 +7,7 @@ def clean_data(X):
     b   = len(X[0,:]) #num of oxides + total
     clean = np.copy(X)  #copies the input to avoid overwriting
     for i in range (a):
-        if (clean[i,-1] <50):
+        if (clean[i,-1] <80) & ((clean[i,6] <40) | (clean[i,3] <50)):
             clean[i,:] = clean[i,:]*0 #normalising data to 100%
     return clean
 #This function takes major oxide compositions and normalise them to 100%
@@ -17,7 +17,8 @@ def to_anhydrous(X):
     anh = np.copy(X)  #copies the input to avoid overwriting
     for i in range (a):
         for j in range (b):
-            anh[i,j] = anh[i,j]*100/anh[i,-1] #normalising data to 100%
+            if (anh[i,-1] > 0):
+                anh[i,j] = anh[i,j]*100/anh[i,-1] #normalising data to 100%
     return anh
 #This function takes major oxide compositions in wt.% and converts them to mol
 def to_mol(X):
@@ -30,10 +31,11 @@ def to_mol(X):
     mol = np.copy(X)  #copies the input to avoid overwriting
     for i in range (a):
         for j in range (b):
-            if b == 11:
-                mol[i,j] = mol[i,j]/mw[j]  #converts to mol
-            else:
-                mol[i,j] = mol[i,j]/mw2[j] #converts to mol
+            if mol[i,j]>0:
+                if b == 11:
+                    mol[i,j] = mol[i,j]/mw[j]  #converts to mol
+                else:
+                    mol[i,j] = mol[i,j]/mw2[j] #converts to mol
     return mol
 #This function takes major oxide compositions in mol and converts them to cation fractions
 def to_cat(X):
@@ -44,12 +46,14 @@ def to_cat(X):
     cat       = np.copy(X)                #copies the input to avoid overwriting
     for i in range (a):
         for j in range (b-1):
-            if b == 11:
-                cat[i,j] = cat[i,j]*ct[j]  #calculate cation fractions
-            else:
-                cat[i,j] = cat[i,j]*ct2[j] #calculate cation fractions
-        cat[i,-1] = np.sum(cat[i,:-1]) #calculates the sum of oxide mol per analysis
-        cat[i,:-1] = cat[i,:-1]/cat[i,-1]
+            if cat[i,-1]>0:
+                if b == 11:
+                    cat[i,j] = cat[i,j]*ct[j]  #calculate cation fractions
+                else:
+                    cat[i,j] = cat[i,j]*ct2[j] #calculate cation fractions
+        if cat[i,-1]>0:
+            cat[i,-1] = np.sum(cat[i,:-1]) #calculates the sum of oxide mol per analysis
+            cat[i,:-1] = cat[i,:-1]/cat[i,-1]
     return cat
 
 def add_fe2o3(X):
@@ -103,7 +107,8 @@ def norm_calc(X):
             oots[i,15] = oots[i,13]-oots[i,14]      #C Al
         oots[i,16] = oots[i,14]                                         #an Ca
         oots[i,17] = Z[i,7]-oots[i,0]-oots[i,16]                        #di Ca
-        oots[i,22] = Z[i,6]/(Z[i,6]+Z[i,4]+Z[i,5]-oots[i,2]-oots[i,11]) #XMg
+        if Z[i,-1]>0:
+            oots[i,22] = Z[i,6]/(Z[i,6]+Z[i,4]+Z[i,5]-oots[i,2]-oots[i,11]) #XMg
         oots[i,18] = oots[i,17]*oots[i,22]                              #di Mg
         oots[i,19] = oots[i,17]*(1-oots[i,22])                          #di FeII 
         oots[i,20] = Z[i,4]+Z[i,5]-oots[i,2]-oots[i,11]-oots[i,19]      #ol/hy Fe(II)
