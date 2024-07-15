@@ -44,7 +44,7 @@ SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5,tot               = [np.zeros((d,c
 #setting up empty Normative Differentiation Index array
 DI                                                              = np.zeros((d,c))
 #setting up empty normative minerals wt.% arrays
-Q,Fsp,Ne,ap,px,ol,ox,mrg                                        = [np.zeros((d,c)) for i in range(8)]
+Q,ort,lc,ab,ne,an,C,ac,ns,di,ol,hy,mt,ilm,ap,Fsp,mrg,px,ox      = [np.zeros((d,c)) for i in range(19)]
 #setting up empty coordinate arrays (mesh-like)
 Nx,Ny                                                           = [np.zeros((d,c)) for i in range(2)] #coordinates of pixels (columns)
 
@@ -56,97 +56,46 @@ data_molf   = to_mol(data_anhf)         #calculates anhydrous-based oxide compos
 data_catf   = to_cat(data_molf)         #calculates anhydrous-based cation compositions mol
 data_molf2  = to_mol(to_anhydrous(add_fe2o3(data_majors))) #calculates oxide compositions including Fe2O3 mol
 data_normf  = norm_calc(data_molf2) #calculates normative mineralogy
+
+#filtered_df = df[df['emails'].str.contains('GMAIL', case=False)]
 #reorganising calculated data based on pixel coordinates
 #filling up empty arrays
 for j in range (d):
     for i in range (c):
         if data_majors[j*c+j+i,-1]>0:
-            SiO2p[j,i]     = data_majors[j*c+j+i,0]
-            TiO2p[j,i]     = data_majors[j*c+j+i,1]
-            Al2O3p[j,i]    = data_majors[j*c+j+i,2]
-            FeOp[j,i]      = data_majors[j*c+j+i,3]
-            MnOp[j,i]      = data_majors[j*c+j+i,4]
-            MgOp[j,i]      = data_majors[j*c+j+i,5]
-            CaOp[j,i]      = data_majors[j*c+j+i,6]
-            Na2Op[j,i]     = data_majors[j*c+j+i,7]
-            K2Op[j,i]      = data_majors[j*c+j+i,8]
-            P2O5p[j,i]     = data_majors[j*c+j+i,9]
-            totp[j,i]      = data_majors[j*c+j+i,-1]
-            SiO2[j,i]      = data_anhf[j*c+j+i,0]
-            TiO2[j,i]      = data_anhf[j*c+j+i,1]
-            Al2O3[j,i]     = data_anhf[j*c+j+i,2]
-            FeO[j,i]       = data_anhf[j*c+j+i,3]
-            MnO[j,i]       = data_anhf[j*c+j+i,4]
-            MgO[j,i]       = data_anhf[j*c+j+i,5]
-            CaO[j,i]       = data_anhf[j*c+j+i,6]
-            Na2O[j,i]      = data_anhf[j*c+j+i,7]
-            K2O[j,i]       = data_anhf[j*c+j+i,8]
-            P2O5[j,i]      = data_anhf[j*c+j+i,9]
-            tot[j,i]       = data_anhf[j*c+j+i,-1]
+            SiO2p[j,i],TiO2p[j,i],Al2O3p[j,i],FeOp[j,i],MnOp[j,i],MgOp[j,i],CaOp[j,i],Na2Op[j,i],K2Op[j,i],P2O5p[j,i],totp[j,i]     = [data_majors[j*c+j+i,q] for q in range (11)]
+            SiO2[j,i],TiO2[j,i],Al2O3[j,i],FeO[j,i],MnO[j,i],MgO[j,i],CaO[j,i],Na2O[j,i],K2O[j,i],P2O5[j,i],tot[j,i]                = [data_anhf[j*c+j+i,q] for q in range (11)]
+            Q[j,i],ort[j,i],lc[j,i],ab[j,i],ne[j,i],an[j,i],C[j,i],ac[j,i],ns[j,i],di[j,i],ol[j,i],hy[j,i],mt[j,i],ilm[j,i],ap[j,i] = [data_normf[j*c+j+i,q] for q in range (15)]
             Mf[j,i]        = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
                              (data_catf[j*(c+1)+i,6]*2))/(data_catf[j*(c+1)+i,0]*data_catf[j*(c+1)+i,2])
             NK_A[j,i]      = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
             NKC_A[j,i]     = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8]+
                              data_molf[j*(c+1)+i,6])/data_molf[j*(c+1)+i,2]
             Mg_MgFe2[j,i]  = data_molf2[j*(c+1)+i,6]/(data_molf2[j*(c+1)+i,4]+data_molf2[j*(c+1)+i,6]+
-                                                     data_molf2[j*(c+1)+i,5])
+                             data_molf2[j*(c+1)+i,5])
             K_Na[j,i]      = (data_anhf[j*c+j+i,8]*8302)/(data_anhf[j*c+j+i,7]*7419)
             DI[j,i]        = np.sum(data_normf[j*c+j+i,0:5])+data_normf[j*c+j+i,8]
-            Q[j,i]         = data_normf[j*c+j+i,0]
-            Fsp[j,i]       = data_normf[j*c+j+i,1]+data_normf[j*c+j+i,3]
-            Ne[j,i]        = data_normf[j*c+j+i,4]
-            ap[j,i]        = data_normf[j*c+j+i,14]
-            px[j,i]        = data_normf[j*c+j+i,9]+data_normf[j*c+j+i,11]
-            ol[j,i]        = data_normf[j*c+j+i,10]
-            ox[j,i]        = data_normf[j*c+j+i,12]+data_normf[j*c+j+i,13]
+            Fsp[j,i]       = ort[j,i]+ab[j,i]+an[j,i]
+            px[j,i]        = ac[j,i]+di[j,i]+hy[j,i]
+            ox[j,i]        = mt[j,i]+ilm[j,i]
             Nx[j,i]        = data_coord[j*c+j+i,2]
             Ny[j,i]        = data_coord[j*c+j+i,3]
         else:
-            SiO2p[j,i]     = 300
-            TiO2p[j,i]     = 300
-            Al2O3p[j,i]    = 300
-            FeOp[j,i]      = 300
-            MnOp[j,i]      = 300
-            MgOp[j,i]      = 300
-            CaOp[j,i]      = 300
-            Na2Op[j,i]     = 300
-            K2Op[j,i]      = 300
-            P2O5p[j,i]     = 300
-            totp[j,i]      = -1
-            SiO2[j,i]      = 300
-            TiO2[j,i]      = 300
-            Al2O3[j,i]     = 300
-            FeO[j,i]       = 300
-            MnO[j,i]       = 300
-            MgO[j,i]       = 300
-            CaO[j,i]       = 300
-            Na2O[j,i]      = 300
-            K2O[j,i]       = 300
-            P2O5[j,i]      = 300
-            tot[j,i]       = -1
-            Mf[j,i]        = -1
-            NK_A[j,i]      = 300
-            NKC_A[j,i]     = 300
-            Mg_MgFe2[j,i]  = 300
-            K_Na[j,i]      = -1
-            DI[j,i]        = 300
-            Q[j,i]         = 300
-            Fsp[j,i]       = 300
-            Ne[j,i]        = 300
-            ap[j,i]        = 300
-            px[j,i]        = 300
-            ol[j,i]        = 300
-            ox[j,i]        = 300
-            Nx[j,i]        = 300
-            Ny[j,i]        = 300
+            SiO2p[j,i],TiO2p[j,i],Al2O3p[j,i],FeOp[j,i],MnOp[j,i],MgOp[j,i],CaOp[j,i],Na2Op[j,i],K2Op[j,i],P2O5p[j,i]               = [300 for q in range (10)]
+            SiO2[j,i],TiO2[j,i],Al2O3[j,i],FeO[j,i],MnO[j,i],MgO[j,i],CaO[j,i],Na2O[j,i],K2O[j,i],P2O5[j,i]                         = [300 for q in range (10)]
+            totp[j,i],tot[j,i],Mf[j,i],K_Na[j,i]                                                                                    = [-1 for q in range (4)]
+            NK_A[j,i],NKC_A[j,i],Mg_MgFe2[j,i],DI[j,i]                                                                              = [300 for q in range (4)]
+            Q[j,i],ort[j,i],lc[j,i],ab[j,i],ne[j,i],an[j,i],C[j,i],ac[j,i],ns[j,i],di[j,i],ol[j,i],hy[j,i],mt[j,i],ilm[j,i],ap[j,i] = [300 for q in range (15)]
+            Nx[j,i]        = data_coord[j*c+j+i,2]
+            Ny[j,i]        = data_coord[j*c+j+i,3]
 
 
 for j in range (d):
     for i in range (c):
-        if (Q[j,i] <30) & (Fsp[j,i]>60):
-            mrg[j,i]=1
+        if (Q[j,i] <20) & (Fsp[j,i]>40) & (px[j,i]>10):
+            mrg[j,i]=5
         elif (Q[j,i] >80):
-            mrg[j,i]=2
+            mrg[j,i]=1
         elif (ox[j,i] >60):
             mrg[j,i]=3
         elif (px[j,i] >70):
