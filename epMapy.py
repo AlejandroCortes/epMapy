@@ -87,7 +87,7 @@ else:
     #filling up empty arrays
     for j in range (d):
         for i in range (c):
-            if data_majors[j*c+j+i,-1]>0:
+            if data_majors[j*(c+1)+i,-1]>0:
                 SiO2p[j,i],TiO2p[j,i],Al2O3p[j,i],FeOp[j,i],MnOp[j,i],MgOp[j,i],CaOp[j,i],Na2Op[j,i],K2Op[j,i],P2O5p[j,i],totp[j,i]     = [data_majors[j*c+j+i,q] for q in range (11)]
                 SiO2[j,i],TiO2[j,i],Al2O3[j,i],FeO[j,i],MnO[j,i],MgO[j,i],CaO[j,i],Na2O[j,i],K2O[j,i],P2O5[j,i],tot[j,i]                = [data_anhf[j*c+j+i,q] for q in range (11)]
                 Q[j,i],ort[j,i],lc[j,i],ab[j,i],ne[j,i],an[j,i],C[j,i],ac[j,i],ns[j,i],di[j,i],ol[j,i],hy[j,i],mt[j,i],ilm[j,i],ap[j,i] = [data_normf[j*c+j+i,q] for q in range (15)]
@@ -220,7 +220,7 @@ else:
 
     plt.figure(figsize=(6.5*cm,6.5*cm))
     fig, axs = plt.subplots(2, 3)
-    a0       = axs[0,0].imshow(SiO2p,cmap='Spectral_r',vmin=0, vmax=100)
+    a0       = axs[0,0].imshow(SiO2p,cmap='Spectral_r',vmin=0, vmax=105)
     a0.cmap.set_over('black')
     axs[0,0].set_title("SiO$_{2}$ wt.%")
     axs[0,0].axis("off")
