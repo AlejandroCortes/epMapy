@@ -1,5 +1,9 @@
-# ignore ALL .log files
+env
+.venv
 *.xlsx
-
-# ignore ALL files in ANY directory named temp
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 temp/
