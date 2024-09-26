@@ -20,6 +20,7 @@ print(introd)
 #Reading excel file with major and trace elements in glasses
 #data        = pd.read_excel (r'09028A_M1.xlsx',skiprows=[0])
 name = input('Please type the path where the data file is located:   ')
+data        = pd.read_excel (name,)
 try:
     st0 = time.time()
     data        = pd.read_excel (name,)
