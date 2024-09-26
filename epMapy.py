@@ -41,6 +41,7 @@ else:
     #Creating two arrays (composition and coordinates) using data from excel file using the name of the columns
     df_majors   = pd.DataFrame(data, columns = ['SiO2 WT%','TiO2 WT%','Al2O3 WT%','FeO WT%','MnO WT%','MgO WT%',
                                             'CaO WT%','Na2O WT%','K2O WT%','P2O5 WT%','Total'])
+    df_majors = df_majors.fillna(0.000000000000000001)
     df_coord    = pd.DataFrame(data, columns = ['X','Y','NX','NY'])
     st4 = time.time()
     elapsed_time = st4 - st0 - (st1p-st1)
@@ -108,11 +109,11 @@ else:
             else:
                 SiO2p[j,i],TiO2p[j,i],Al2O3p[j,i],FeOp[j,i],MnOp[j,i],MgOp[j,i],CaOp[j,i],Na2Op[j,i],K2Op[j,i],P2O5p[j,i]               = [300 for q in range (10)]
                 SiO2[j,i],TiO2[j,i],Al2O3[j,i],FeO[j,i],MnO[j,i],MgO[j,i],CaO[j,i],Na2O[j,i],K2O[j,i],P2O5[j,i]                         = [300 for q in range (10)]
-                totp[j,i],tot[j,i],Mf[j,i],K_Na[j,i]                                                                                    = [-1 for q in range (4)]
+                totp[j,i],tot[j,i],Mf[j,i],K_Na[j,i],Q[j,i]                                                                             = [-1 for q in range (5)]
                 NK_A[j,i],NKC_A[j,i],Mg_MgFe2[j,i],DI[j,i],Fsp[j,i],px[j,i],ox[j,i]                                                     = [300 for q in range (7)]
-                Q[j,i],ort[j,i],lc[j,i],ab[j,i],ne[j,i],an[j,i],C[j,i],ac[j,i],ns[j,i],di[j,i],ol[j,i],hy[j,i],mt[j,i],ilm[j,i],ap[j,i] = [300 for q in range (15)]
+                ort[j,i],lc[j,i],ab[j,i],ne[j,i],an[j,i],C[j,i],ac[j,i],ns[j,i],di[j,i],ol[j,i],hy[j,i],mt[j,i],ilm[j,i],ap[j,i]        = [300 for q in range (14)]
 
-
+    print(Q[0,:])
 
     for j in range (d):
         for i in range (c):
@@ -136,7 +137,7 @@ else:
     plt.figure(figsize = (6.5*cm,6.5*cm))
     fig, axs = plt.subplots(2, 3)
     a0       = axs[0,0].imshow(Q,cmap='Spectral_r',vmin=0, vmax=100)
-    a0.cmap.set_over('black')
+    a0.cmap.set_under('black')
     axs[0,0].set_title("Q wt.%")
     axs[0,0].axis("off")
     fig.colorbar(a0)
