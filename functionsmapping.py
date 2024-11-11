@@ -2,41 +2,78 @@
 import numpy as np
 import pandas as pd
 
-def clean_data(X):
-    a   = len(X[:,0]) #num of data points
-    b   = len(X[0,:]) #num of oxides + total
-    clean = np.copy(X)  #copies the input to avoid overwriting
-    for i in range (a):
-        if (clean[i,-1] <80) & ((clean[i,6] <40) | (clean[i,3] <50)):
-            clean[i,:] = clean[i,:]*0 #normalising data to 100%
+def clean_data(X, oxide_column_indices):
+    a = len(X[:, 0])  # number of data points
+    b = len(X[0, :])  # number of oxides + total
+    clean = np.copy(X)  # copies the input to avoid overwriting
+
+    # Accessing the FeO, CaO, and Total columns using the indices
+    feo_idx = oxide_column_indices.get('FeO', None)
+    cao_idx = oxide_column_indices.get('CaO', None)
+    total_idx = -1  # Assuming the last column is the total
+
+    if feo_idx is None or cao_idx is None:
+        print("FeO or CaO column not found in the data!")
+        return clean  # Return original if FeO or CaO columns are missing
+
+    for i in range(a):
+        # Retrieve the values dynamically using column indices
+        if (clean[i, total_idx] < 80) & ((clean[i, feo_idx] < 40) | (clean[i, cao_idx] < 50)):
+            clean[i, :] = clean[i, :] * 0  # Normalizing data to 100%
+    
     return clean
+
 #This function takes major oxide compositions and normalise them to 100%
 def to_anhydrous(X):
     a   = len(X[:,0]) #num of data points
     b   = len(X[0,:]) #num of oxides + total
     anh = np.copy(X)  #copies the input to avoid overwriting
+    total_idx = -1  # Assuming the last column is the total
+
     for i in range (a):
         for j in range (b):
-            if (anh[i,-1] > 0):
-                anh[i,j] = anh[i,j]*100/anh[i,-1] #normalising data to 100%
+            if (anh[i, total_idx] > 0):
+                anh[i,j] = anh[i,j]*100/anh[i,[i, total_idx]] #normalising data to 100%
     return anh
 #This function takes major oxide compositions in wt.% and converts them to mol
-def to_mol(X):
-    a   = len(X[:,0]) #num of pixels
-    b   = len(X[0,:]) #num of oxides + total
-    #molecular weights with FeOt
-    mw  = [60.08,79.87,101.96,71.85,70.94,40.3,56.08,61.98,94.2,141.94,100]
-    #molecular weights with FeO and Fe2O3 calculated
-    mw2 = [60.08,79.87,101.96,159.7,71.85,70.94,40.3,56.08,61.98,94.2,141.94,100]
-    mol = np.copy(X)  #copies the input to avoid overwriting
-    for i in range (a):
-        for j in range (b):
-            if mol[i,j]>0:
-                if b == 11:
-                    mol[i,j] = mol[i,j]/mw[j]  #converts to mol
+def to_mol(X, oxide_column_indices):
+    a = len(X[:, 0])  # number of pixels (rows)
+    b = len(X[0, :])  # number of oxides + total (columns)
+
+    # Molecular weights with FeOt
+    mw = {
+        "SiO2": 60.080, "TiO2": 79.870, "Cr2O3": 152.000, "Al2O3": 101.960, "FeO": 71.840, 
+        "MnO": 70.940, "NiO": 74.690, "MgO": 40.300, "CaO": 56.080, "Na2O": 61.980, 
+        "K2O": 94.200, "P2O5": 283.880, "F": 18.998, "Cl": 35.450, "SO3": 80.060, 
+        "BaO": 153.330, "SrO": 103.620
+    }
+
+    # Molecular weights with FeO and Fe2O3 calculated
+    mw2 = {
+        "SiO2": 60.080, "TiO2": 79.870, "Cr2O3": 152.000, "Al2O3": 101.960, "FeO": 71.840, 
+        "MnO": 70.940, "NiO": 74.690, "MgO": 40.300, "CaO": 56.080, "Na2O": 61.980, 
+        "K2O": 94.200, "P2O5": 283.880, "F": 18.998, "Cl": 35.450, "SO3": 80.060, 
+        "BaO": 153.330, "SrO": 103.620, "Fe2O3": 141.94
+    }
+
+    mol = np.copy(X)  # Copy the input to avoid overwriting
+
+    # Determine which molecular weight list to use (mw vs mw2)
+    if b == 18:  # 18 columns: includes Fe2O3
+        mw_dict = mw2
+    else:  # 17 columns: no Fe2O3
+        mw_dict = mw
+
+    # Iterate through the data to convert oxides to mol
+    for i in range(a):  # Iterate over each row (data point)
+        for col_name, col_idx in oxide_column_indices.items():  # Iterate over oxide columns
+            if mol[i, col_idx] > 0:  # Skip if the value is zero or negative
+                if col_name == "Total":
+                    mol[i, col_idx] = 100  # Set "Total" to 100
                 else:
-                    mol[i,j] = mol[i,j]/mw2[j] #converts to mol
+                    mol[i, col_idx] = mol[i, col_idx] / mw_dict.get(col_name, 1)  # Convert to mol using molecular weight
     return mol
+
 #This function takes major oxide compositions in mol and converts them to cation fractions
 def to_cat(X):
     a         = len(X[:,0])               #num of pixels
