@@ -20,6 +20,7 @@ import re  # to compare a set of string-type attributes
 import time  # to handle time-related calculations
 import matplotlib.pyplot as plt #default plotting library
 from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data  # importing external functions from functionsmapping.py
+from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
 
 ###########################################################################################################################################################
 # Loading EPMA data
@@ -47,7 +48,6 @@ coord_columns = {}
 
 # Normalize column names by removing 'WT%' but retain capitalization
 data.columns = data.columns.str.replace(" WT%", "", regex=True).str.replace("wt%", "", regex=True).str.strip()
-
 # Create a mapping of original column names to normalized column names
 #column_map = dict(zip(normalized_columns, data.columns))
 
@@ -75,7 +75,7 @@ for oxide in expected_oxides:
 oxide_column_indices = {col: index for index, col in enumerate(oxide_columns.keys())}
 oxide_data = np.array([oxide_columns[key] for key in oxide_columns])
 coord_data = np.array([coord_columns[key] for key in coord_columns])
-
+print(oxide_data[oxide_column_indices["SiO2"]])
 ###########################################################################################################################################################
 # Calling multiple functions
 ###########################################################################################################################################################
@@ -89,44 +89,79 @@ data_catf   = to_cat(data_molf, oxide_column_indices)         #calculates anhydr
 ###########################################################################################################################################################
 # Structuring data so that it can be plotted
 ###########################################################################################################################################################
-d, c = int((max(coord_data[:,2]))-1), int((max(coord_data[:,3]))-1) # Determine grid size from unique coordinates
-NK_A,NKC_A,Mg_MgFe2,K_Na                                        = [np.zeros((d,c)) for i in range(4)] #setting up empty molar fractions arrays
-Mf                                                              = np.zeros((d,c)) #setting up empty cation fractions arrays (M factor)
-SiO2p,TiO2p,Al2O3p,FeOp,MnOp,MgOp,CaOp,Na2Op,K2Op,P2O5p,totp    = [np.zeros((d,c)) for i in range(11)] #setting up empty oxides wt.% arrays
-SiO2,TiO2,Al2O3,FeO,MnO,MgO,CaO,Na2O,K2O,P2O5,tot               = [np.zeros((d,c)) for i in range(11)] #setting up empty anhydrous-based oxides wt.% arrays
-DI                                                              = np.zeros((d,c)) #setting up empty Normative Differentiation Index array
-Q,ort,lc,ab,ne,an,C,ac,ns,di,ol,hy,mt,ilm,ap,Fsp,mrg,px,ox      = [np.zeros((d,c)) for i in range(19)] #setting up empty normative minerals wt.% arrays
-Nx,Ny                                                           = [np.zeros((d,c)) for i in range(2)] #setting up empty coordinate arrays (mesh-like)
+# Ensure the grid size matches the maximum NX and NY values
+d, c = int(max(coord_columns["NX"])), int(max(coord_columns["NY"]))
 
-#filtered_df = df[df['emails'].str.contains('GMAIL', case=False)]
-    #reorganising calculated data based on pixel coordinates
-    #filling up empty arrays
-for j in range (d):
-    for i in range (c):
-        if data_majors[j*(c+1)+i,-1]>0:
-            SiO2p[j,i],TiO2p[j,i],Al2O3p[j,i],FeOp[j,i],MnOp[j,i],MgOp[j,i],CaOp[j,i],Na2Op[j,i],K2Op[j,i],P2O5p[j,i],totp[j,i]     = [data_majors[j*c+j+i,q] for q in range (11)]
-            SiO2[j,i],TiO2[j,i],Al2O3[j,i],FeO[j,i],MnO[j,i],MgO[j,i],CaO[j,i],Na2O[j,i],K2O[j,i],P2O5[j,i],tot[j,i]                = [data_anhf[j*c+j+i,q] for q in range (11)]
-            #Q[j,i],ort[j,i],lc[j,i],ab[j,i],ne[j,i],an[j,i],C[j,i],ac[j,i],ns[j,i],di[j,i],ol[j,i],hy[j,i],mt[j,i],ilm[j,i],ap[j,i] = [data_normf[j*c+j+i,q] for q in range (15)]
-            Mf[j,i]        = (data_catf[j*(c+1)+i,7]+data_catf[j*(c+1)+i,8]+
-                            (data_catf[j*(c+1)+i,6]*2))/(data_catf[j*(c+1)+i,0]*data_catf[j*(c+1)+i,2])
-            NK_A[j,i]      = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8])/data_molf[j*(c+1)+i,2]
-            NKC_A[j,i]     = (data_molf[j*(c+1)+i,7]+data_molf[j*(c+1)+i,8]+
-                             data_molf[j*(c+1)+i,6])/data_molf[j*(c+1)+i,2]
-            #Mg_MgFe2[j,i]  = data_molf2[j*(c+1)+i,6]/(data_molf2[j*(c+1)+i,4]+data_molf2[j*(c+1)+i,6]+
-            #                data_molf2[j*(c+1)+i,5])
-            K_Na[j,i]      = (data_anhf[j*c+j+i,8]*8302)/(data_anhf[j*c+j+i,7]*7419)
-            #DI[j,i]        = np.sum(data_normf[j*c+j+i,0:5])+data_normf[j*c+j+i,8]
-            #Fsp[j,i]       = ort[j,i]+ab[j,i]+an[j,i]
-            #px[j,i]        = ac[j,i]+di[j,i]+hy[j,i]
-            #ox[j,i]        = mt[j,i]+ilm[j,i]
-            #Nx[j,i]        = data_coord[j*c+j+i,2]
-            #Ny[j,i]        = data_coord[j*c+j+i,3]
-        else:
-            SiO2p[j,i],TiO2p[j,i],Al2O3p[j,i],FeOp[j,i],MnOp[j,i],MgOp[j,i],CaOp[j,i],Na2Op[j,i],K2Op[j,i],P2O5p[j,i]               = [300 for q in range (10)]
-            SiO2[j,i],TiO2[j,i],Al2O3[j,i],FeO[j,i],MnO[j,i],MgO[j,i],CaO[j,i],Na2O[j,i],K2O[j,i],P2O5[j,i]                         = [300 for q in range (10)]
-            totp[j,i],tot[j,i],Mf[j,i],K_Na[j,i],Q[j,i]                                                                             = [-1 for q in range (5)]
-            NK_A[j,i],NKC_A[j,i],Mg_MgFe2[j,i],DI[j,i],Fsp[j,i],px[j,i],ox[j,i]                                                     = [300 for q in range (7)]
-            #ort[j,i],lc[j,i],ab[j,i],ne[j,i],an[j,i],C[j,i],ac[j,i],ns[j,i],di[j,i],ol[j,i],hy[j,i],mt[j,i],ilm[j,i],ap[j,i]        = [300 for q in range (14)]
+# Initialize arrays for various properties
+NK_A, NKC_A, Mg_MgFe2, K_Na = [np.zeros((d, c)) for _ in range(4)]
+Mf = np.zeros((d, c))
+SiO2p, TiO2p, Al2O3p, FeOp, MnOp, MgOp, CaOp, Na2Op, K2Op, P2O5p, totp = [np.zeros((d, c)) for _ in range(11)]
+SiO2, TiO2, Al2O3, FeO, MnO, MgO, CaO, Na2O, K2O, P2O5, tot = [np.zeros((d, c)) for _ in range(11)]
+
+# Loop through all data points to fill grid arrays
+for idx in range(len(data_majors)):
+    # Convert pixel number to grid indices
+    nx, ny = int(coord_columns["NX"][idx]) - 1, int(coord_columns["NY"][idx]) - 1
+
+    # Check if Total column value is valid
+    if data_majors[idx, oxide_column_indices["Total"]] > 0:
+        # Fill oxide weight percent grids using column names
+        SiO2p[nx, ny] = data_majors[idx, oxide_column_indices["SiO2"]]
+        TiO2p[nx, ny] = data_majors[idx, oxide_column_indices["TiO2"]]
+        Al2O3p[nx, ny] = data_majors[idx, oxide_column_indices["Al2O3"]]
+        FeOp[nx, ny] = data_majors[idx, oxide_column_indices["FeO"]]
+        MnOp[nx, ny] = data_majors[idx, oxide_column_indices["MnO"]]
+        MgOp[nx, ny] = data_majors[idx, oxide_column_indices["MgO"]]
+        CaOp[nx, ny] = data_majors[idx, oxide_column_indices["CaO"]]
+        Na2Op[nx, ny] = data_majors[idx, oxide_column_indices["Na2O"]]
+        K2Op[nx, ny] = data_majors[idx, oxide_column_indices["K2O"]]
+        P2O5p[nx, ny] = data_majors[idx, oxide_column_indices["P2O5"]]
+        totp[nx, ny] = data_majors[idx, oxide_column_indices["Total"]]
+
+        # Fill anhydrous oxide grids
+        SiO2[nx, ny] = data_anhf[idx, oxide_column_indices["SiO2"]]
+        TiO2[nx, ny] = data_anhf[idx, oxide_column_indices["TiO2"]]
+        Al2O3[nx, ny] = data_anhf[idx, oxide_column_indices["Al2O3"]]
+        FeO[nx, ny] = data_anhf[idx, oxide_column_indices["FeO"]]
+        MnO[nx, ny] = data_anhf[idx, oxide_column_indices["MnO"]]
+        MgO[nx, ny] = data_anhf[idx, oxide_column_indices["MgO"]]
+        CaO[nx, ny] = data_anhf[idx, oxide_column_indices["CaO"]]
+        Na2O[nx, ny] = data_anhf[idx, oxide_column_indices["Na2O"]]
+        K2O[nx, ny] = data_anhf[idx, oxide_column_indices["K2O"]]
+        P2O5[nx, ny] = data_anhf[idx, oxide_column_indices["P2O5"]]
+        tot[nx, ny] = data_anhf[idx, oxide_column_indices["Total"]]
+
+        # Fill derived properties
+        Mf[nx, ny] = (
+            (data_catf[idx, oxide_column_indices["Na2O"]] +
+             data_catf[idx, oxide_column_indices["K2O"]] +
+             (data_catf[idx, oxide_column_indices["CaO"]] * 2)) /
+            (data_catf[idx, oxide_column_indices["SiO2"]] *
+             data_catf[idx, oxide_column_indices["Al2O3"]])
+        )
+        NK_A[nx, ny] = (
+            (data_molf[idx, oxide_column_indices["Na2O"]] +
+             data_molf[idx, oxide_column_indices["K2O"]]) /
+            data_molf[idx, oxide_column_indices["Al2O3"]]
+        )
+        NKC_A[nx, ny] = (
+            (data_molf[idx, oxide_column_indices["Na2O"]] +
+             data_molf[idx, oxide_column_indices["K2O"]] +
+             data_molf[idx, oxide_column_indices["CaO"]]) /
+            data_molf[idx, oxide_column_indices["Al2O3"]]
+        )
+        K_Na[nx, ny] = (
+            data_anhf[idx, oxide_column_indices["K2O"]] * 8302 /
+            data_anhf[idx, oxide_column_indices["Na2O"]] * 7419
+        )
+    else:
+        # Fill invalid points with placeholder values
+        for grid in [SiO2p, TiO2p, Al2O3p, FeOp, MnOp, MgOp, CaOp, Na2Op, K2Op, P2O5p, SiO2, TiO2, Al2O3, FeO, MnO, MgO, CaO, Na2O, K2O, P2O5]:
+            grid[nx, ny] = 300
+        for grid in [totp, tot, Mf, NK_A, NKC_A, K_Na]:
+            grid[nx, ny] = -1
+
+
 cm       = 1/2.54
 
 plt.figure(figsize=(6.5*cm,6.5*cm))
@@ -164,4 +199,4 @@ fig.colorbar(a5)
 scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
 plt.gca().add_artist(scalebar)
 plt.tight_layout()
-plt.savefig(filename+'_oxides_anh.pdf',dpi=600, transparent=True, bbox_inches='tight')
+plt.savefig('oxides_anh.pdf',dpi=600, transparent=True, bbox_inches='tight')
