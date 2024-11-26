@@ -4,8 +4,8 @@ import pandas as pd
 import re
 
 def clean_data(X, oxide_column_indices):
-    a = len(X[:, 0])  # number of data points
-    b = len(X[0, :])  # number of oxides + total
+    a = len(X[0, :])  # number of data points
+    b = len(X[:, 0])  # number of oxides + total
     clean = np.copy(X)  # copies the input to avoid overwriting
 
     # Accessing the FeO, CaO, and Total columns using the indices
@@ -15,28 +15,28 @@ def clean_data(X, oxide_column_indices):
 
     for i in range(a):
         # Retrieve the values dynamically using column indices
-        if (clean[i, total_index] < 80) & ((clean[i, feo_index] < 40) | (clean[i, cao_index] < 50)):
-            clean[i, :] = clean[i, :] * 0  # flagging as a bad analysis or crackj
+        if (clean[total_index,i] < 80) & ((clean[feo_index,i] < 40) | (clean[cao_index,i] < 50)):
+            clean[:, i] = clean[:, i] * 0  # flagging as a bad analysis or crackj
     
     return clean
 
 #This function takes major oxide compositions and normalise them to 100%
 def to_anhydrous(X, oxide_column_indices):
-    a   = len(X[:,0]) #num of data points
-    b   = len(X[0,:]) #num of oxides + total
+    a   = len(X[0,:]) #num of data points
+    b   = len(X[:,0]) #num of oxides + total
     anh = np.copy(X)  #copies the input to avoid overwriting
     total_index = oxide_column_indices.get('Total', None)
 
     for i in range (a):
         for j in range (b):
-            if (anh[i, total_index] > 0):
-                anh[i,j] = anh[i,j]*100/anh[i,total_index] #normalising data to 100%
+            if (anh[total_index,i] > 0):
+                anh[j,i] = anh[j,i]*100/anh[total_index,i] #normalising data to 100%
     return anh
 
 #This function takes major oxide compositions in wt.% and converts them to mol
 def to_mol(X, oxide_column_indices):
-    a = len(X[:, 0])  # number of pixels (rows)
-    b = len(X[0, :])  # number of oxides + total (columns)
+    a = len(X[0, :])  # number of pixels (rows)
+    b = len(X[:, 0])  # number of oxides + total (columns)
     total_index = oxide_column_indices.get('Total', None)
 
     # Molecular weights with FeO and Fe2O3 calculated
@@ -52,17 +52,17 @@ def to_mol(X, oxide_column_indices):
     # Iterate through the data to convert oxides to mol
     for i in range(a):  # Iterate over each row (data point)
         for col_name, col_index in oxide_column_indices.items():  # Iterate over oxide columns
-            if mol[i, total_index] > 0:  # Skip if the value is zero or negative
+            if mol[total_index,i] > 0:  # Skip if the value is zero or negative
                 if col_name == "Total":
-                    mol[i, col_index] = 100  # Set "Total" to 100
+                    mol[col_index,i] = 100  # Set "Total" to 100
                 else:
-                    mol[i, col_index] = mol[i, col_index] / mw.get(col_name, 1)  # Convert to mol using molecular weight
+                    mol[col_index,i] = mol[col_index,i] / mw.get(col_name, 1)  # Convert to mol using molecular weight
     return mol
 
 #This function takes major oxide compositions in mol and converts them to cation fractions
 def to_cat(X, oxide_column_indices):
-    a = len(X[:, 0])  # number of pixels
-    b = len(X[0, :])  # number of oxides + total
+    a = len(X[0, :])  # number of pixels
+    b = len(X[:, 0])  # number of oxides + total
     total_index = oxide_column_indices.get('Total', None)
     
     ct = {
@@ -76,18 +76,18 @@ def to_cat(X, oxide_column_indices):
     
     for i in range(a):
         # Calculate cation fractions for each oxide column
-        if cat[i, total_index] > 0:  # Skip if the total value is zero or negative
+        if cat[total_index,i] > 0:  # Skip if the total value is zero or negative
             for col_name, col_index in oxide_column_indices.items():  # Iterate over oxide columns
                 if col_name != "Total":
-                    cat[i, col_index] = cat[i, col_index] * ct.get(col_name, 1)  # Calculate cation fractions
+                    cat[col_index,i] = cat[col_index,i] * ct.get(col_name, 1)  # Calculate cation fractions
         
             # Sum all columns (excluding 'Total' column) and store in 'Total' column
             oxide_columns = [index for col_name, index in oxide_column_indices.items() if col_name != "Total"]  # Exclude "Total"
-            sum_of_oxides = np.sum(cat[i, oxide_columns])  # sum all columns except 'Total'
-            cat[i, total_index] = sum_of_oxides  # Store the sum in the 'Total' column
+            sum_of_oxides = np.sum(cat[oxide_columns,i])  # sum all columns except 'Total'
+            cat[total_index,i] = sum_of_oxides  # Store the sum in the 'Total' column
             for col_name, col_index in oxide_column_indices.items():
                 if col_name != "Total":
-                    cat[i, col_index] = cat[i, col_index] / cat[i, total_index] 
+                    cat[col_index,i] = cat[col_index,i] / cat[total_index,i] 
                 
     return cat
 
@@ -99,13 +99,13 @@ def add_fe2o3(X, oxide_column_indices):
     if "Fe2O3" not in oxide_column_indices:
         # Calculate Fe2O3 from FeOtot and Fe2+/Fetot ratio
         feo_index = oxide_column_indices.get('FeO', None)
-        Fe2O3 = X[:, feo_index] * (1 - Fe2_Fetot) * 1.11134
+        Fe2O3 = X[feo_index,:] * (1 - Fe2_Fetot) * 1.11134
         
         # Add the Fe2O3 data to the array
-        X2 = np.append(X2, np.reshape(Fe2O3, (len(Fe2O3), 1)), axis=1)
+        X2 = np.vstack([X2, Fe2O3])  # Add Fe2O3 as a new row
         
         # Update FeO with the Fe2+/Fetot ratio
-        X2[:, feo_index] = X2[:, feo_index] * Fe2_Fetot
+        X2[feo_index,:] = X2[feo_index,:] * Fe2_Fetot
     
         # Update the oxide_column_indices to include Fe2O3
         oxide_column_indices["Fe2O3"] = len(oxide_column_indices)  # Add Fe2O3 at the next available index
@@ -118,7 +118,7 @@ def add_fe2o3(X, oxide_column_indices):
 
 def norm_calc(X, oxide_column_indices):
     Z = np.copy(X)  # Copy the input to avoid overwriting
-    a = len(Z[:, 0])  # Number of pixels
+    a = len(Z[0,:])  # Number of pixels
     oots = np.zeros((a, 23))  # Array to store calculated values
     fps=np.zeros((a,8)) #First pass silica
     sps=np.zeros((a,11)) #Second pass silica
@@ -134,7 +134,7 @@ def norm_calc(X, oxide_column_indices):
         ]
     fps_names = ["lc", "ne", "ac", "ns", "an", "di", "ol", "residual_si"]
     sps_names = [
-        "or_K", "lc_K", "residual_si2", "ab_Na", "residual_si3", "prelim_ol_Mg_Fe", "prelim_hy_Mg_Fe", 
+        "or_K", "lc_K", "residual_si2", "ab_Na", "ne_Na","residual_si3", "prelim_ol_Mg_Fe", "prelim_hy_Mg_Fe", 
         "actual_ol_Mg_Fe", "actual_hy_Mg_Fe", "residual_siQ"
         ]
     fs_names = ["or", "lc", "ab", "ne", "ol", "hy", "Q"]
@@ -154,73 +154,71 @@ def norm_calc(X, oxide_column_indices):
     fs_index = {name: index for index, name in enumerate(fs_names)}
     nwt_index = {name: index for index, name in enumerate(nwt_names)}
 
-    condA = Z[:, oxide_indices['Total']] > 0
+    condA = Z[oxide_indices['Total'],:] > 0
 
-    oots[:, oots_index["ap_Ca"]] = Z[:, oxide_indices['P2O5']] * 10 / 3  # ap Ca
-    oots[:, oots_index["ap_P"]] = Z[:, oxide_indices['P2O5']]  # ap P
-    oots[:, oots_index["ilm_Fe_II"]] = Z[:, oxide_indices['TiO2']]  # ilm Fe(II)
-    oots[:, oots_index["Ilm_Ti"]] = Z[:, oxide_indices['TiO2']]  # ilm Ti
-    oots[:, oots_index["or_lc_Al"]] = Z[:, oxide_indices['K2O']]  # or/lc Al
-    oots[:, oots_index["or_lc_K"]] = Z[:, oxide_indices['K2O']]  # or/lc K
+    oots[:, oots_index["ap_Ca"]] = Z[oxide_indices['P2O5']] * 10 / 3  # ap Ca
+    oots[:, oots_index["ap_P"]] = Z[oxide_indices['P2O5']]  # ap P
+    oots[:, oots_index["ilm_Fe_II"]] = Z[oxide_indices['TiO2']]  # ilm Fe(II)
+    oots[:, oots_index["Ilm_Ti"]] = Z[oxide_indices['TiO2']]  # ilm Ti
+    oots[:, oots_index["or_lc_Al"]] = Z[oxide_indices['K2O']]  # or/lc Al
+    oots[:, oots_index["or_lc_K"]] = Z[oxide_indices['K2O']]  # or/lc K
 
-    oots[:, oots_index["ab_ne_Al"]] = np.where(condA & (Z[:, oxide_indices['Na2O']] > (Z[:, oxide_indices['Al2O3']] - oots[:, oots_index["or_lc_Al"]])),
-                                               Z[:, oxide_indices['Al2O3']] - oots[:, oots_index["or_lc_Al"]],
-                                               Z[:, oxide_indices['Na2O']]) 
+    oots[:, oots_index["ab_ne_Al"]] = np.where(condA & (Z[oxide_indices['Na2O']] > (Z[oxide_indices['Al2O3']] - oots[:, oots_index["or_lc_Al"]])),
+                                               Z[oxide_indices['Al2O3']] - oots[:, oots_index["or_lc_Al"]],
+                                               Z[oxide_indices['Na2O']]) 
     oots[:, oots_index["ab_ne_Na"]] = np.where(condA,
-                                                oots[:, oots_index["ab_ne_Al"]])
-    oots[:, oots_index["ac_FeIII"]] = np.where(condA & ((Z[:, oxide_indices['Na2O']] - oots[:, oots_index["ab_ne_Na"]]) < Z[:, oxide_indices['Fe2O3']]),
-                                               Z[:, oxide_indices['Na2O']] - oots[:, oots_index["ab_ne_Na"]],
-                                               Z[:, oxide_indices['Fe2O3']])
-    oots[:, oots_index["ac_Na"]] = np.where(condA, oots[:, oots_index["ac_FeIII"]])  # ac Na
-    oots[:, oots_index["ns_Na"]] = np.where(condA, Z[:, oxide_indices['Na2O']] - oots[:, oots_index["ab_ne_Na"]] - oots[:, oots_index["ac_Na"]])  # ns Na
-    oots[:, oots_index["mt_Fe_III"]] = np.where(condA, Z[:, oxide_indices['Fe2O3']] - oots[:, oots_index["ac_FeIII"]])  # mt Fe(III)
-    oots[:, oots_index["mt_Fe_II"]] = np.where(condA, oots[:, oots_index["mt_Fe_III"]])
+                                                oots[:, oots_index["ab_ne_Al"]],0)
+    oots[:, oots_index["ac_FeIII"]] = np.where(condA & ((Z[oxide_indices['Na2O']] - oots[:, oots_index["ab_ne_Na"]]) < Z[oxide_indices['Fe2O3']]),
+                                               Z[oxide_indices['Na2O']] - oots[:, oots_index["ab_ne_Na"]],
+                                               Z[oxide_indices['Fe2O3']])
+    oots[:, oots_index["ac_Na"]] = np.where(condA, oots[:, oots_index["ac_FeIII"]],0)  # ac Na
+    oots[:, oots_index["ns_Na"]] = np.where(condA, Z[oxide_indices['Na2O']] - oots[:, oots_index["ab_ne_Na"]] - oots[:, oots_index["ac_Na"]],0)  # ns Na
+    oots[:, oots_index["mt_Fe_III"]] = np.where(condA, Z[oxide_indices['Fe2O3']] - oots[:, oots_index["ac_FeIII"]],0)  # mt Fe(III)
+    oots[:, oots_index["mt_Fe_II"]] = np.where(condA, oots[:, oots_index["mt_Fe_III"]],0)
     oots[:, oots_index["an_Al_prelim"]] = np.where(condA & (oots[:, oots_index["ac_Na"]] > 0.000001),
                                                    0,
-                                                   Z[:, oxide_indices['Al2O3']] - oots[:, oots_index["or_lc_Al"]] - oots[:, oots_index["ab_ne_Al"]])
-    oots[:, oots_index["an_Al_final"]] = np.where(condA & (oots[:, oots_index["an_Al_prelim"]] > (Z[:, oxide_indices['CaO']] - oots[:, oots_index["ap_Ca"]])),
-                                                  Z[:, oxide_indices['CaO']] - oots[:, oots_index["ap_Ca"]],
+                                                   Z[oxide_indices['Al2O3']] - oots[:, oots_index["or_lc_Al"]] - oots[:, oots_index["ab_ne_Al"]])
+    oots[:, oots_index["an_Al_final"]] = np.where(condA & (oots[:, oots_index["an_Al_prelim"]] > (Z[oxide_indices['CaO']] - oots[:, oots_index["ap_Ca"]])),
+                                                  Z[oxide_indices['CaO']] - oots[:, oots_index["ap_Ca"]],
                                                   oots[:, oots_index["an_Al_prelim"]])                                               
     oots[:, oots_index["C_Al"]] = np.where(condA &(oots[:, oots_index["an_Al_prelim"]] == oots[:, oots_index["an_Al_final"]]),
                                            0,
                                            oots[:, oots_index["an_Al_prelim"]] - oots[:, oots_index["an_Al_final"]])
-    oots[:, oots_index["an_Ca"]] = np.where(condA, oots[:, oots_index["an_Al_final"]])  # an Ca
-    oots[:, oots_index["di_Ca"]] = np.where(condA, Z[:, oxide_indices['CaO']] - oots[:, oots_index["ap_Ca"]] - oots[:, oots_index["an_Ca"]])  # di Ca
-    oots[:, oots_index["Mg_num"]] = np.where(condA, Z[:, oxide_indices['MgO']] / (Z[:, oxide_indices['MgO']] + Z[:, oxide_indices['FeO']] + 
-                                                                                                             Z[:, oxide_indices['MgO']] - oots[:, oots_index["ilm_Fe_II"]] - 
-                                                                                                             oots[:, oots_index["mt_Fe_II"]]))  # XMg
-    oots[:, oots_index["di_Mg"]] = np.where(condA, oots[:, oots_index["di_Ca"]] * oots[:, oots_index["Mg_num"]])  # di Mg
-    oots[:, oots_index["di_FeII"]] = np.where(condA, oots[:, oots_index["di_Ca"]] * (1 - oots[:, oots_index["Mg_num"]]))  # di FeII
-    oots[:, oots_index["ol_hy_Fe_II"]] = np.where(condA, Z[:, oxide_indices['FeO']] + Z[:, oxide_indices['MnO']] - oots[:, oots_index["ilm_Fe_II"]] - 
-                                                  oots[:, oots_index["mt_Fe_II"]] - oots[:, oots_index["di_FeII"]])  # ol/hy Fe(II)
-    oots[:, oots_index["ol_hy_Mg"]] = np.where(condA,Z[:, oxide_indices['MgO']] - oots[:, oots_index["di_Mg"]])  # ol/hy Mg
+    oots[:, oots_index["an_Ca"]] = np.where(condA, oots[:, oots_index["an_Al_final"]],0)  # an Ca
+    oots[:, oots_index["di_Ca"]] = np.where(condA, Z[oxide_indices['CaO']] - oots[:, oots_index["ap_Ca"]] - oots[:, oots_index["an_Ca"]],0)  # di Ca
+    oots[:, oots_index["Mg_num"]] = np.where(condA, Z[oxide_indices['MgO']] / (Z[oxide_indices['MgO']] + Z[oxide_indices['FeO']] + Z[oxide_indices['MnO']] - oots[:, oots_index["ilm_Fe_II"]] - oots[:, oots_index["mt_Fe_II"]]),0)  # XMg
+    oots[:, oots_index["di_Mg"]] = np.where(condA, oots[:, oots_index["di_Ca"]] * oots[:, oots_index["Mg_num"]],0)  # di Mg
+    oots[:, oots_index["di_FeII"]] = np.where(condA, oots[:, oots_index["di_Ca"]] * (1 - oots[:, oots_index["Mg_num"]]),0)  # di FeII
+    oots[:, oots_index["ol_hy_Fe_II"]] = np.where(condA, Z[oxide_indices['FeO']] + Z[oxide_indices['MnO']] - oots[:, oots_index["ilm_Fe_II"]] - 
+                                                  oots[:, oots_index["mt_Fe_II"]] - oots[:, oots_index["di_FeII"]],0)  # ol/hy Fe(II)
+    oots[:, oots_index["ol_hy_Mg"]] = np.where(condA,Z[oxide_indices['MgO']] - oots[:, oots_index["di_Mg"]],0)  # ol/hy Mg
     
-    fps[:, fps_index["lc"]]   = np.where(condA,4*oots[:, oots_index["or_lc_K"]])                               #lc
-    fps[:, fps_index["ne"]]   = np.where(condA,2*oots[:, oots_index["ab_ne_Na"]])                               #ne
-    fps[:, fps_index["ac"]]   = np.where(condA,4*oots[:, oots_index["ac_Na"]])                                        #ac
-    fps[:, fps_index["ns"]]   = np.where(condA,oots[:, oots_index["ns_Na"]])                                         #ns
-    fps[:, fps_index["an"]]   = np.where(condA,2*oots[:, oots_index["an_Ca"]])                                       #an
-    fps[:, fps_index["di"]]   = np.where(condA,2*oots[:, oots_index["di_Ca"]])                                       #di
-    fps[:, fps_index["ol"]]   = np.where(condA,(oots[:, oots_index["ol_hy_Fe_II"]]+ oots[:, oots_index["ol_hy_Mg"]])/2)  
+    fps[:, fps_index["lc"]]   = np.where(condA,4*oots[:, oots_index["or_lc_K"]],0)                               #lc
+    fps[:, fps_index["ne"]]   = np.where(condA,2*oots[:, oots_index["ab_ne_Na"]],0)                               #ne
+    fps[:, fps_index["ac"]]   = np.where(condA,4*oots[:, oots_index["ac_Na"]],0)                                        #ac
+    fps[:, fps_index["ns"]]   = np.where(condA,oots[:, oots_index["ns_Na"]],0)                                         #ns
+    fps[:, fps_index["an"]]   = np.where(condA,2*oots[:, oots_index["an_Ca"]],0)                                       #an
+    fps[:, fps_index["di"]]   = np.where(condA,2*oots[:, oots_index["di_Ca"]],0)                                       #di
+    fps[:, fps_index["ol"]]   = np.where(condA,(oots[:, oots_index["ol_hy_Fe_II"]]+ oots[:, oots_index["ol_hy_Mg"]])/2,0)  
     
     fps_columns = [index for col_name, index in fps_index.items() if col_name != "residual_si"]
-    sum_of_fps = np.where(condA,np.sum(fps[:, fps_columns], axis=1))  # sum all columns except "residual_si"
-    fps[:, fps_index["residual_si"]]   = np.where(condA,Z[:, oxide_indices["SiO2"]]-sum_of_fps) #residual Si
+    sum_of_fps = np.where(condA,np.sum(fps[:, fps_columns], axis=1),0)  # sum all columns except "residual_si"
+    fps[:, fps_index["residual_si"]]   = np.where(condA,Z[oxide_indices["SiO2"]]-sum_of_fps,0) #residual Si
     
     sps[:, sps_index["or_K"]] = np.where(condA & ((oots[:, oots_index["or_lc_K"]]*2) > fps[:, fps_index["residual_si"]]),
                                         (fps[:, fps_index["lc"]]+(fps[:,fps_index["residual_si"]]-(oots[:, oots_index["or_lc_K"]]*2)))/2, #or K
                                          oots[:, oots_index["or_lc_K"]])                             #or K 
-    sps[:, sps_index["lc_K"]]  = np.where(condA,oots[:, oots_index["or_lc_K"]]-sps[:, sps_index["or_K"]])                         #lc K
-    sps[:, sps_index["residual_si2"]]  = np.where(condA,fps[:, fps_index["residual_si"]]-(2*sps[:, sps_index["or_K"]]))                      #residual Si
+    sps[:, sps_index["lc_K"]]  = np.where(condA,oots[:, oots_index["or_lc_K"]]-sps[:, sps_index["or_K"]],0)                         #lc K
+    sps[:, sps_index["residual_si2"]]  = np.where(condA,fps[:, fps_index["residual_si"]]-(2*sps[:, sps_index["or_K"]]),0)                      #residual Si
     sps[:, sps_index["ab_Na"]] = np.where(condA & ((oots[:, oots_index["ab_ne_Na"]]*4) > sps[:, sps_index["residual_si2"]]),
                                           (sps[:, sps_index["residual_si2"]]+fps[:, fps_index["ne"]]-(2*oots[:, oots_index["ab_ne_Na"]]))/4,
                                           oots[:, oots_index["ab_ne_Na"]])
-    sps[:, sps_index["ne_Na"]]  = np.where(condA,oots[:, oots_index["ab_ne_Na"]]-sps[:, sps_index["ab_Na"]])                         #ne Na
-    sps[:, sps_index["residual_si3"]]  = np.where(condA,sps[:, sps_index["residual_si2"]]-(4*sps[:, sps_index["ab_Na"]]))                      #residual Si
+    sps[:, sps_index["ne_Na"]]  = np.where(condA,oots[:, oots_index["ab_ne_Na"]]-sps[:, sps_index["ab_Na"]],0)                         #ne Na
+    sps[:, sps_index["residual_si3"]]  = np.where(condA,sps[:, sps_index["residual_si2"]]-(4*sps[:, sps_index["ab_Na"]]),0)                      #residual Si
     sps[:, sps_index["prelim_ol_Mg_Fe"]] = np.where(condA & (sps[:, sps_index["ne_Na"]] > 0.0000001),
                                                     oots[:, oots_index["ol_hy_Fe_II"]]+oots[:, oots_index["ol_hy_Mg"]],
                                                     oots[:, oots_index["ol_hy_Fe_II"]]+oots[:, oots_index["ol_hy_Mg"]]-(2*sps[:, sps_index["prelim_ol_Mg_Fe"]]))
-    sps[:, sps_index["prelim_hy_Mg_Fe"]]  = np.where(condA,oots[:, oots_index["ol_hy_Fe_II"]]+oots[:, oots_index["ol_hy_Mg"]]-sps[:, sps_index["prelim_ol_Mg_Fe"]])             #prelim hy Mg+Fe
+    sps[:, sps_index["prelim_hy_Mg_Fe"]]  = np.where(condA,oots[:, oots_index["ol_hy_Fe_II"]]+oots[:, oots_index["ol_hy_Mg"]]-sps[:, sps_index["prelim_ol_Mg_Fe"]],0)             #prelim hy Mg+Fe
     condB = sps[:, sps_index["prelim_ol_Mg_Fe"]] < 0
     sps[:, sps_index["actual_ol_Mg_Fe"]] = np.where(condA & condB,
                                                     0,
@@ -232,32 +230,32 @@ def norm_calc(X, oxide_column_indices):
                                                  sps[:, sps_index["residual_si3"]]-((oots[:, oots_index["ol_hy_Fe_II"]]+oots[:, oots_index["ol_hy_Mg"]])/2),
                                                  0)
                                                  
-    fs[:, fs_index["or"]]  = np.where(condA,6*sps[:, sps_index["or_K"]])   #or
-    fs[:, fs_index["lc"]]  = np.where(condA,4*sps[:, sps_index["lc_K"]])   #lc
-    fs[:, fs_index["ab"]]  = np.where(condA,6*sps[:, sps_index["ab_Na"]] )  #ab
-    fs[:, fs_index["ne"]]  = np.where(condA,2*sps[:, sps_index["ne_Na"]] )  #ne
-    fs[:, fs_index["ol"]]  = np.where(condA,0.5*sps[:, sps_index["actual_ol_Mg_Fe"]]) #ol
-    fs[:, fs_index["hy"]]  = np.where(condA,sps[:, sps_index["actual_hy_Mg_Fe"]] )    #hy
-    fs[:, fs_index["Q"]]  = np.where(condA,sps[:,sps_index["residual_siQ"]])    #Q
+    fs[:, fs_index["or"]]  = np.where(condA,6*sps[:, sps_index["or_K"]],0)   #or
+    fs[:, fs_index["lc"]]  = np.where(condA,4*sps[:, sps_index["lc_K"]],0)   #lc
+    fs[:, fs_index["ab"]]  = np.where(condA,6*sps[:, sps_index["ab_Na"]] ,0)  #ab
+    fs[:, fs_index["ne"]]  = np.where(condA,2*sps[:, sps_index["ne_Na"]] ,0)  #ne
+    fs[:, fs_index["ol"]]  = np.where(condA,0.5*sps[:, sps_index["actual_ol_Mg_Fe"]],0) #ol
+    fs[:, fs_index["hy"]]  = np.where(condA,sps[:, sps_index["actual_hy_Mg_Fe"]] ,0)    #hy
+    fs[:, fs_index["Q"]]  = np.where(condA,sps[:,sps_index["residual_siQ"]],0)    #Q
            
-    n_wt[:, nwt_index["Q"]]  = np.where(condA,fs[:, fs_index["Q"]]*60.08)                                                 #Q
-    n_wt[:, nwt_index["or"]]  = np.where(condA,sps[:, sps_index["or_K"]]*556.64)                                               #or
-    n_wt[:, nwt_index["lc"]]  = np.where(condA,sps[:, sps_index["lc_K"]]*436.48)                                               #lc
-    n_wt[:, nwt_index["ab"]]  = np.where(condA,sps[:, sps_index["ab_Na"]]*524.42)                                               #ab
-    n_wt[:, nwt_index["ne"]]  = np.where(condA,sps[:, sps_index["ne_Na"]]*284.1)                                                #ne
-    n_wt[:, nwt_index["an"]]  = np.where(condA,oots[:, oots_index["an_Ca"]]*278.2 )                                             #an
-    n_wt[:, nwt_index["C"]]  = np.where(condA,oots[:, oots_index["C_Al"]]*101.96 )                                            #C
-    n_wt[:, nwt_index["ac"]]  = np.where(condA,oots[:, oots_index["ac_Na"]]*462  )                                               #ac
-    n_wt[:, nwt_index["ns"]]  = np.where(condA,oots[:, oots_index["ns_Na"]]*122.06  )                                           #ns
-    n_wt[:, nwt_index["di"]]  = np.where(condA,(oots[:, oots_index["di_Ca"]]*116.16)+(oots[:, oots_index["di_Mg"]]*100.38)+(oots[:, oots_index["di_FeII"]]*131.39))   #di
-    n_wt[:, nwt_index["ol"]] = np.where(condA,(sps[:, sps_index["actual_ol_Mg_Fe"]]*70.34*oots[:, oots_index["Mg_num"]])+(sps[:, sps_index["actual_ol_Mg_Fe"]]*(1-oots[:, oots_index["Mg_num"]])*101.89))  #ol
-    n_wt[:, nwt_index["hy"]] = np.where(condA,(sps[:, sps_index["actual_hy_Mg_Fe"]]*100.38*oots[:, oots_index["Mg_num"]])+(sps[:, sps_index["actual_hy_Mg_Fe"]]*(1-oots[:, oots_index["Mg_num"]])*131.93) )#hy
-    n_wt[:, nwt_index["mt"]] = np.where(condA,oots[:, oots_index["mt_Fe_III"]]*231.55   )                                          #mt
-    n_wt[:, nwt_index["ilm"]] = np.where(condA,oots[:, oots_index["Ilm_Ti"]]*151.72   )                                           #ilm
-    n_wt[:, nwt_index["ap"]] = np.where(condA,oots[:, oots_index["ap_P"]]*328.87     )                                         #ap
+    n_wt[:, nwt_index["Q"]]  = np.where(condA,fs[:, fs_index["Q"]]*60.08,0)                                                 #Q
+    n_wt[:, nwt_index["or"]]  = np.where(condA,sps[:, sps_index["or_K"]]*556.64,0)                                               #or
+    n_wt[:, nwt_index["lc"]]  = np.where(condA,sps[:, sps_index["lc_K"]]*436.48,0)                                               #lc
+    n_wt[:, nwt_index["ab"]]  = np.where(condA,sps[:, sps_index["ab_Na"]]*524.42,0)                                               #ab
+    n_wt[:, nwt_index["ne"]]  = np.where(condA,sps[:, sps_index["ne_Na"]]*284.1,0)                                                #ne
+    n_wt[:, nwt_index["an"]]  = np.where(condA,oots[:, oots_index["an_Ca"]]*278.2 ,0)                                             #an
+    n_wt[:, nwt_index["C"]]  = np.where(condA,oots[:, oots_index["C_Al"]]*101.96 ,0)                                            #C
+    n_wt[:, nwt_index["ac"]]  = np.where(condA,oots[:, oots_index["ac_Na"]]*462  ,0)                                               #ac
+    n_wt[:, nwt_index["ns"]]  = np.where(condA,oots[:, oots_index["ns_Na"]]*122.06 ,0 )                                           #ns
+    n_wt[:, nwt_index["di"]]  = np.where(condA,(oots[:, oots_index["di_Ca"]]*116.16)+(oots[:, oots_index["di_Mg"]]*100.38)+(oots[:, oots_index["di_FeII"]]*131.39),0)   #di
+    n_wt[:, nwt_index["ol"]] = np.where(condA,(sps[:, sps_index["actual_ol_Mg_Fe"]]*70.34*oots[:, oots_index["Mg_num"]])+(sps[:, sps_index["actual_ol_Mg_Fe"]]*(1-oots[:, oots_index["Mg_num"]])*101.89),0)  #ol
+    n_wt[:, nwt_index["hy"]] = np.where(condA,(sps[:, sps_index["actual_hy_Mg_Fe"]]*100.38*oots[:, oots_index["Mg_num"]])+(sps[:, sps_index["actual_hy_Mg_Fe"]]*(1-oots[:, oots_index["Mg_num"]])*131.93),0 )#hy
+    n_wt[:, nwt_index["mt"]] = np.where(condA,oots[:, oots_index["mt_Fe_III"]]*231.55,0   )                                          #mt
+    n_wt[:, nwt_index["ilm"]] = np.where(condA,oots[:, oots_index["Ilm_Ti"]]*151.72 ,0  )                                           #ilm
+    n_wt[:, nwt_index["ap"]] = np.where(condA,oots[:, oots_index["ap_P"]]*328.87   ,0  )                                         #ap
     nwt_columns = [index for col_name, index in nwt_index.items() if col_name != "total"]                       # Exclude "total"
-    sum_of_nwt = np.where(condA,np.sum(n_wt[:, nwt_columns], axis=1))                                                                    # sum all columns except "residual_si"
-    n_wt[:, nwt_index["total"]] = np.where(condA,sum_of_nwt)
+    sum_of_nwt = np.where(condA,np.sum(n_wt[:, nwt_columns], axis=1),0)                                                                    # sum all columns except "residual_si"
+    n_wt[:, nwt_index["total"]] = np.where(condA,sum_of_nwt,0)
 
     return n_wt, nwt_index
 

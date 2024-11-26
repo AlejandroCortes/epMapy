@@ -45,6 +45,7 @@ for attempt in range(attempts):
 ###########################################################################################################################################################
 oxide_columns = {} 
 coord_columns = {}
+oxide_columns_original = {}
 
 # Normalize column names by removing 'WT%' but retain capitalization
 data.columns = data.columns.str.replace(" WT%", "", regex=True).str.replace("wt%", "", regex=True).str.strip()
@@ -56,6 +57,7 @@ for norm_col in data.columns:
     if re.search(r"(SiO2|TiO2|Cr2O3|Al2O3|FeO|MnO|NiO|MgO|CaO|Na2O|K2O|P2O5|F|Cl|SO3|BaO|SrO|Total)", norm_col, re.IGNORECASE):
         print(f"Matched oxide column: {norm_col}")
         oxide_columns[norm_col] = data[norm_col].values  # Use the original column name
+        oxide_columns_original[norm_col] = data[norm_col].values  # Use the original column name
     elif re.search(r"(X|Y|NX|NY)", norm_col, re.IGNORECASE):
         print(f"Matched coordinate column: {norm_col}")
         coord_columns[norm_col] = data[norm_col].values  # Use the original column name
@@ -73,9 +75,12 @@ for oxide in expected_oxides:
 # Convert dictionaries into numpy arrays but keeping their column indexes
 ###########################################################################################################################################################
 oxide_column_indices = {col: index for index, col in enumerate(oxide_columns.keys())}
+oxide_column_indices_original = {col: index for index, col in enumerate(oxide_columns_original.keys())}
+coord_column_indices = {col: index for index, col in enumerate(coord_columns.keys())}
 oxide_data = np.array([oxide_columns[key] for key in oxide_columns])
 coord_data = np.array([coord_columns[key] for key in coord_columns])
-print(oxide_data[oxide_column_indices["SiO2"]])
+
+
 ###########################################################################################################################################################
 # Calling multiple functions
 ###########################################################################################################################################################
@@ -83,120 +88,89 @@ data_majors = clean_data(oxide_data, oxide_column_indices)   #cleaning holes and
 data_anhf = to_anhydrous(oxide_data, oxide_column_indices) #calculates anhydrous-base oxide compositions wt.%
 data_molf   = to_mol(data_anhf, oxide_column_indices)         #calculates anhydrous-based oxide compositions mol
 data_catf   = to_cat(data_molf, oxide_column_indices)         #calculates anhydrous-based cation compositions mol
+fe2o3_included, oxide_column_indices = add_fe2o3(data_majors,oxide_column_indices)
+fe2o3_anh = to_anhydrous(fe2o3_included, oxide_column_indices)
+fe2o3_mol = to_mol(fe2o3_anh, oxide_column_indices)
 #data_molf2  = to_mol(to_anhydrous(add_fe2o3(data_majors, oxide_column_indices), oxide_column_indices),oxide_column_indices) #calculates oxide compositions including Fe2O3 mol
-#data_normf  = norm_calc(data_molf2, oxide_column_indices) #calculates normative mineralogy
+data_normf  = norm_calc(fe2o3_mol, oxide_column_indices) #calculates normative mineralogy
 
 ###########################################################################################################################################################
 # Structuring data so that it can be plotted
 ###########################################################################################################################################################
 # Ensure the grid size matches the maximum NX and NY values
-d, c = int(max(coord_columns["NX"])), int(max(coord_columns["NY"]))
+c, d = int(max(coord_data[coord_column_indices["NX"]])), int(max(coord_data[coord_column_indices["NY"]]))
 
 # Initialize arrays for various properties
-NK_A, NKC_A, Mg_MgFe2, K_Na = [np.zeros((d, c)) for _ in range(4)]
-Mf = np.zeros((d, c))
-SiO2p, TiO2p, Al2O3p, FeOp, MnOp, MgOp, CaOp, Na2Op, K2Op, P2O5p, totp = [np.zeros((d, c)) for _ in range(11)]
-SiO2, TiO2, Al2O3, FeO, MnO, MgO, CaO, Na2O, K2O, P2O5, tot = [np.zeros((d, c)) for _ in range(11)]
+NK_A, NKC_A, Mg_MgFe2, K_Na = [np.zeros((c, d)) for _ in range(4)]
+Mf = np.zeros((c, d))
+oxide_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
+oxideanh_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
 
 # Loop through all data points to fill grid arrays
-for idx in range(len(data_majors)):
-    # Convert pixel number to grid indices
-    nx, ny = int(coord_columns["NX"][idx]) - 1, int(coord_columns["NY"][idx]) - 1
-
-    # Check if Total column value is valid
-    if data_majors[idx, oxide_column_indices["Total"]] > 0:
-        # Fill oxide weight percent grids using column names
-        SiO2p[nx, ny] = data_majors[idx, oxide_column_indices["SiO2"]]
-        TiO2p[nx, ny] = data_majors[idx, oxide_column_indices["TiO2"]]
-        Al2O3p[nx, ny] = data_majors[idx, oxide_column_indices["Al2O3"]]
-        FeOp[nx, ny] = data_majors[idx, oxide_column_indices["FeO"]]
-        MnOp[nx, ny] = data_majors[idx, oxide_column_indices["MnO"]]
-        MgOp[nx, ny] = data_majors[idx, oxide_column_indices["MgO"]]
-        CaOp[nx, ny] = data_majors[idx, oxide_column_indices["CaO"]]
-        Na2Op[nx, ny] = data_majors[idx, oxide_column_indices["Na2O"]]
-        K2Op[nx, ny] = data_majors[idx, oxide_column_indices["K2O"]]
-        P2O5p[nx, ny] = data_majors[idx, oxide_column_indices["P2O5"]]
-        totp[nx, ny] = data_majors[idx, oxide_column_indices["Total"]]
-
-        # Fill anhydrous oxide grids
-        SiO2[nx, ny] = data_anhf[idx, oxide_column_indices["SiO2"]]
-        TiO2[nx, ny] = data_anhf[idx, oxide_column_indices["TiO2"]]
-        Al2O3[nx, ny] = data_anhf[idx, oxide_column_indices["Al2O3"]]
-        FeO[nx, ny] = data_anhf[idx, oxide_column_indices["FeO"]]
-        MnO[nx, ny] = data_anhf[idx, oxide_column_indices["MnO"]]
-        MgO[nx, ny] = data_anhf[idx, oxide_column_indices["MgO"]]
-        CaO[nx, ny] = data_anhf[idx, oxide_column_indices["CaO"]]
-        Na2O[nx, ny] = data_anhf[idx, oxide_column_indices["Na2O"]]
-        K2O[nx, ny] = data_anhf[idx, oxide_column_indices["K2O"]]
-        P2O5[nx, ny] = data_anhf[idx, oxide_column_indices["P2O5"]]
-        tot[nx, ny] = data_anhf[idx, oxide_column_indices["Total"]]
+for idx in range(len(coord_data[coord_column_indices["NXY"]])):
+    nx, ny = int(coord_data[coord_column_indices["NX"]][idx]) - 1, int(coord_data[coord_column_indices["NY"]][idx]) - 1
+    
+    if data_majors[oxide_column_indices["Total"]][idx] > 0:
+        for oxide, col_index in oxide_column_indices_original.items():
+            col_index = oxide_column_indices[oxide]
+            oxide_grids[oxide][nx, ny] = data_majors[col_index][idx]
+            oxideanh_grids[oxide][nx, ny] = data_anhf[col_index][idx]
 
         # Fill derived properties
         Mf[nx, ny] = (
-            (data_catf[idx, oxide_column_indices["Na2O"]] +
-             data_catf[idx, oxide_column_indices["K2O"]] +
-             (data_catf[idx, oxide_column_indices["CaO"]] * 2)) /
-            (data_catf[idx, oxide_column_indices["SiO2"]] *
-             data_catf[idx, oxide_column_indices["Al2O3"]])
+            (data_catf[oxide_column_indices["Na2O"],idx] +
+             data_catf[oxide_column_indices["K2O"],idx] +
+             (data_catf[oxide_column_indices["CaO"],idx] * 2)) /
+            (data_catf[oxide_column_indices["SiO2"],idx] *
+             data_catf[oxide_column_indices["Al2O3"],idx])
         )
         NK_A[nx, ny] = (
-            (data_molf[idx, oxide_column_indices["Na2O"]] +
-             data_molf[idx, oxide_column_indices["K2O"]]) /
-            data_molf[idx, oxide_column_indices["Al2O3"]]
+            (data_molf[oxide_column_indices["Na2O"],idx] +
+             data_molf[oxide_column_indices["K2O"],idx]) /
+            data_molf[oxide_column_indices["Al2O3"],idx]
         )
         NKC_A[nx, ny] = (
-            (data_molf[idx, oxide_column_indices["Na2O"]] +
-             data_molf[idx, oxide_column_indices["K2O"]] +
-             data_molf[idx, oxide_column_indices["CaO"]]) /
-            data_molf[idx, oxide_column_indices["Al2O3"]]
+            (data_molf[oxide_column_indices["Na2O"],idx] +
+             data_molf[oxide_column_indices["K2O"],idx] +
+             data_molf[oxide_column_indices["CaO"],idx]) /
+            data_molf[oxide_column_indices["Al2O3"],idx]
         )
         K_Na[nx, ny] = (
-            data_anhf[idx, oxide_column_indices["K2O"]] * 8302 /
-            data_anhf[idx, oxide_column_indices["Na2O"]] * 7419
+            data_anhf[oxide_column_indices["K2O"],idx] * 8302 /
+            data_anhf[oxide_column_indices["Na2O"],idx] * 7419
         )
     else:
-        # Fill invalid points with placeholder values
-        for grid in [SiO2p, TiO2p, Al2O3p, FeOp, MnOp, MgOp, CaOp, Na2Op, K2Op, P2O5p, SiO2, TiO2, Al2O3, FeO, MnO, MgO, CaO, Na2O, K2O, P2O5]:
-            grid[nx, ny] = 300
-        for grid in [totp, tot, Mf, NK_A, NKC_A, K_Na]:
+        for oxide in oxide_column_indices_original.keys():
+            oxide_grids[oxide][nx, ny] = 300  # Placeholder for invalid points
+            oxideanh_grids[oxide][nx, ny] = 300  # Placeholder for invalid points
+        for grid in [Mf, NK_A, NKC_A, K_Na]:
             grid[nx, ny] = -1
 
 
-cm       = 1/2.54
+# Prompt user to select oxides to plot
+print("Available oxides to plot:", list(oxide_columns_original.keys()))
+selected_oxides = input("Enter the oxides you want to plot, separated by commas: ").split(',')
 
-plt.figure(figsize=(6.5*cm,6.5*cm))
-fig, axs = plt.subplots(2, 3)
-a0       = axs[0,0].imshow(SiO2,cmap='viridis',vmin=0, vmax=100)
-a0.cmap.set_over('black')
-axs[0,0].set_title("SiO$_{2}$ wt.%")
-axs[0,0].axis("off")
-fig.colorbar(a0)
-a1       = axs[0,1].imshow(Al2O3,cmap='viridis',vmin=0, vmax=45)
-a1.cmap.set_over('black')
-axs[0,1].set_title("Al$_{2}$O$_{3}$ wt.%")
-axs[0,1].axis("off")
-fig.colorbar(a1)
-a2       = axs[0,2].imshow(FeO,cmap='viridis',vmin=0, vmax=100)
-a2.cmap.set_over('black')
-axs[0,2].set_title("FeO wt.%")
-axs[0,2].axis("off")
-fig.colorbar(a2)
-a3       = axs[1,0].imshow(MgO,cmap='viridis',vmin=0, vmax=45)
-a3.cmap.set_over('black')
-axs[1,0].set_title("MgO wt.%")
-axs[1,0].axis("off")
-fig.colorbar(a3)
-a4       = axs[1,1].imshow(Na2O,cmap='viridis',vmin=0, vmax=15)
-a4.cmap.set_over('black')
-axs[1,1].set_title("Na$_{2}$O wt.%")
-axs[1,1].axis("off")
-fig.colorbar(a4)
-a5       = axs[1,2].imshow(P2O5,cmap='viridis',vmin=0, vmax=60)
-a5.cmap.set_over('black')
-axs[1,2].set_title("P$_{2}$O$_{5}$")
-axs[1,2].axis("off")
-fig.colorbar(a5)
-scalebar = ScaleBar(0.000005) # 1 pixel = 5 µm
+# Plot the selected oxides
+cm = 1 / 2.54
+plt.figure(figsize=(6.5 * cm, 6.5 * cm))
+fig, axs = plt.subplots(1, len(selected_oxides), figsize=(3 * len(selected_oxides), 3))
+
+for i, oxide in enumerate(selected_oxides):
+    oxide = oxide.strip()  # Remove extra spaces
+    if oxide in oxide_grids:
+        ax = axs[i] if len(selected_oxides) > 1 else axs
+        im = ax.imshow(oxide_grids[oxide], cmap='viridis', vmin=0, vmax=100)
+        im.cmap.set_under('black')
+        im.cmap.set_over('black')
+        ax.set_title(f"{oxide} wt.%")
+        ax.axis("off")
+        fig.colorbar(im, ax=ax)
+    else:
+        print(f"Warning: {oxide} is not a valid oxide.")
+
+scalebar = ScaleBar(0.000005)  # 1 pixel = 5 µm
 plt.gca().add_artist(scalebar)
 plt.tight_layout()
-plt.savefig('oxides_anh.pdf',dpi=600, transparent=True, bbox_inches='tight')
+plt.savefig('selected_oxides.pdf', dpi=600, transparent=True, bbox_inches='tight')
+plt.show()
