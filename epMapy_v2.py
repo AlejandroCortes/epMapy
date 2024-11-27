@@ -21,7 +21,7 @@ import time  # to handle time-related calculations
 import matplotlib.pyplot as plt #default plotting library
 from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data  # importing external functions from functionsmapping.py
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
-
+import tkinter
 ###########################################################################################################################################################
 # Loading EPMA data
 ###########################################################################################################################################################
