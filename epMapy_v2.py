@@ -21,7 +21,7 @@ import time  # to handle time-related calculations
 import matplotlib.pyplot as plt #default plotting library
 from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data  # importing external functions from functionsmapping.py
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
-import tkinter
+
 ###########################################################################################################################################################
 # Loading EPMA data
 ###########################################################################################################################################################
@@ -141,36 +141,47 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
         )
     else:
         for oxide in oxide_column_indices_original.keys():
-            oxide_grids[oxide][nx, ny] = 300  # Placeholder for invalid points
-            oxideanh_grids[oxide][nx, ny] = 300  # Placeholder for invalid points
+            oxide_grids[oxide][nx, ny] = -1  # Placeholder for invalid points
+            oxideanh_grids[oxide][nx, ny] = -1  # Placeholder for invalid points
         for grid in [Mf, NK_A, NKC_A, K_Na]:
             grid[nx, ny] = -1
 
 
-# Prompt user to select oxides to plot
-print("Available oxides to plot:", list(oxide_columns_original.keys()))
-selected_oxides = input("Enter the oxides you want to plot, separated by commas: ").split(',')
+###########################################################################################################################################################
+# Prompt user for sample name and allow multiple plotting sessions
+###########################################################################################################################################################
+sample_name = input("Enter the sample name: ").strip()
 
-# Plot the selected oxides
-cm = 1 / 2.54
-plt.figure(figsize=(6.5 * cm, 6.5 * cm))
-fig, axs = plt.subplots(1, len(selected_oxides), figsize=(3 * len(selected_oxides), 3))
+while True:
+    print("Available oxides to plot:", list(oxide_columns_original.keys()))
+    selected_oxides = input("Enter the oxides you want to plot, separated by commas: ").split(',')
 
-for i, oxide in enumerate(selected_oxides):
-    oxide = oxide.strip()  # Remove extra spaces
-    if oxide in oxide_grids:
-        ax = axs[i] if len(selected_oxides) > 1 else axs
-        im = ax.imshow(oxide_grids[oxide], cmap='viridis', vmin=0, vmax=100)
-        im.cmap.set_under('black')
-        im.cmap.set_over('black')
-        ax.set_title(f"{oxide} wt.%")
-        ax.axis("off")
-        fig.colorbar(im, ax=ax)
-    else:
-        print(f"Warning: {oxide} is not a valid oxide.")
+    cm = 1 / 2.54
+    plt.figure(figsize=(6.5 * cm, 6.5 * cm))
+    fig, axs = plt.subplots(1, len(selected_oxides), figsize=(3 * len(selected_oxides), 3))
 
-scalebar = ScaleBar(0.000005)  # 1 pixel = 5 µm
-plt.gca().add_artist(scalebar)
-plt.tight_layout()
-plt.savefig('selected_oxides.pdf', dpi=600, transparent=True, bbox_inches='tight')
-plt.show()
+    for i, oxide in enumerate(selected_oxides):
+        oxide = oxide.strip()
+        if oxide in oxide_grids:
+            ax = axs[i] if len(selected_oxides) > 1 else axs
+            im = ax.imshow(oxide_grids[oxide], cmap='viridis', vmin=0, vmax=np.max(oxide_grids[oxide]))
+            im.cmap.set_under('black')
+            ax.set_title(f"{oxide} wt.%")
+            ax.axis("off")
+            fig.colorbar(im, ax=ax)
+        else:
+            print(f"Warning: {oxide} is not a valid oxide.")
+
+    scalebar = ScaleBar(0.000005)
+    plt.gca().add_artist(scalebar)
+    plt.tight_layout()
+
+    formatted_oxides = "_".join([oxide.strip() for oxide in selected_oxides])
+    pdf_filename = f"{sample_name}_{formatted_oxides}.pdf"
+    plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
+    print(f"Plot saved as {pdf_filename}")
+    plt.show()
+
+    repeat = input("Would you like to plot another set of oxides? (yes/no): ").strip().lower()
+    if repeat != 'yes':
+        break
