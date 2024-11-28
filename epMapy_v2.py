@@ -21,6 +21,7 @@ import time  # to handle time-related calculations
 import matplotlib.pyplot as plt #default plotting library
 from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data  # importing external functions from functionsmapping.py
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
+import scipy.ndimage
 
 ###########################################################################################################################################################
 # Loading EPMA data
@@ -148,10 +149,66 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
 
 
 ###########################################################################################################################################################
-# Prompt user for sample name and allow multiple plotting sessions
+# Function for binary profile extraction
+###########################################################################################################################################################
+def extract_profile(grid, oxide):
+    print("Select two points on the grid to define a traverse.")
+    
+    # Create a figure to display the grid
+    plt.figure(figsize=(6, 6))
+    im = plt.imshow(grid, cmap='viridis', vmin=0, vmax=np.max(grid))
+    plt.colorbar(im, label=f"{oxide} wt.%")
+    plt.title(f"Select points for {oxide} profile")
+    plt.axis('off')  # Hide axes for cleaner view
+    
+    # Ensure the plot is rendered first before selecting points
+    plt.show(block=False)  # This allows interaction while the plot stays open
+    points = plt.ginput(2)  # Allow the user to select two points on the plot
+    
+    if len(points) < 2:
+        print("Traverse selection canceled.")
+        return
+
+    # Unpack the coordinates of the two points
+    (x1, y1), (x2, y2) = points
+    print(f"Selected points: ({x1:.2f}, {y1:.2f}) to ({x2:.2f}, {y2:.2f})")
+
+    # Create an array of x and y coordinates between the two points (traverse)
+    num_points = 100
+    x_coords = np.linspace(x1, x2, num_points)
+    y_coords = np.linspace(y1, y2, num_points)
+
+    # Debugging: Print coordinates to make sure they're being generated correctly
+    print(f"x_coords: {x_coords}")
+    print(f"y_coords: {y_coords}")
+
+    # Map the coordinates onto the grid to get the profile values (using scipy's map_coordinates)
+    profile_values = scipy.ndimage.map_coordinates(grid, [y_coords, x_coords], order=1)
+    
+    # Debugging: Check if the profile values are being calculated
+    print(f"Profile values: {profile_values}")
+
+    # Calculate the distance between the points along the traverse
+    distances = np.sqrt((x_coords - x1) ** 2 + (y_coords - y1) ** 2)
+    
+    # Debugging: Check the calculated distances
+    print(f"Distances: {distances}")
+
+    # Plot the profile
+    plt.figure(figsize=(6, 4))
+    plt.scatter(distances, profile_values, label=f"{oxide} Profile", color='blue')
+    plt.xlabel("Distance (pixels)")
+    plt.ylabel(f"{oxide} Concentration (wt.%)")
+    plt.title(f"Binary Profile of {oxide}")
+    plt.grid(False)
+    plt.legend()
+    plt.show()
+
+###########################################################################################################################################################
+# Plotting and profile extraction loop
 ###########################################################################################################################################################
 sample_name = input("Enter the sample name: ").strip()
-
+pixel_size = (coord_data[coord_column_indices["X"],1]-coord_data[coord_column_indices["X"],0])*1000
 while True:
     print("Available oxides to plot:", list(oxide_columns_original.keys()))
     selected_oxides = input("Enter the oxides you want to plot, separated by commas: ").split(',')
@@ -172,7 +229,7 @@ while True:
         else:
             print(f"Warning: {oxide} is not a valid oxide.")
 
-    scalebar = ScaleBar(0.000005)
+    scalebar = ScaleBar(pixel_size,"um")
     plt.gca().add_artist(scalebar)
     plt.tight_layout()
 
@@ -181,6 +238,13 @@ while True:
     plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
     print(f"Plot saved as {pdf_filename}")
     plt.show()
+
+    # Ask user if they want to extract a profile
+    extract = input("Would you like to extract a binary profile from one of the plots? (yes/no): ").strip().lower()
+    if extract == 'yes':
+        for oxide in selected_oxides:
+            if oxide.strip() in oxide_grids:
+                extract_profile(oxide_grids[oxide.strip()], oxide.strip())
 
     repeat = input("Would you like to plot another set of oxides? (yes/no): ").strip().lower()
     if repeat != 'yes':
