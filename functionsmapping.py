@@ -2,6 +2,9 @@
 import numpy as np
 import pandas as pd
 import re
+import scipy.ndimage
+import matplotlib.pyplot as plt #default plotting library
+
 
 def clean_data(X, oxide_column_indices):
     a = len(X[0, :])  # number of data points
@@ -259,3 +262,99 @@ def norm_calc(X, oxide_column_indices):
 
     return n_wt, nwt_index
 
+###########################################################################################################################################################
+# Function for binary profile extraction
+###########################################################################################################################################################
+def extract_profile(grid, oxides, pixel_size, selected_oxide, sample_name):
+    print("Select two points on the grid to define a traverse.")
+    
+    # Create a figure to display the grid
+    plt.figure(figsize=(6, 6))
+    im = plt.imshow(grid[selected_oxide], cmap='viridis', vmin=0, vmax=np.max(grid[selected_oxide]))
+    plt.colorbar(im, label=f"{selected_oxide} wt.%")
+    plt.title(f"Select two points for {selected_oxide} profile")
+    plt.axis('off')  # Hide axes for cleaner view
+    
+    # Ensure the plot is rendered first before selecting points
+    plt.show(block=False)  # This allows interaction while the plot stays open
+    points = plt.ginput(2)  # Allow the user to select two points on the plot
+    
+    if len(points) < 2:
+        print("Traverse selection canceled.")
+        return
+
+    # Unpack the coordinates of the two points
+    (x1, y1), (x2, y2) = points
+    print(f"Selected points: ({x1:.2f}, {y1:.2f}) to ({x2:.2f}, {y2:.2f})")
+
+    # Create an array of x and y coordinates between the two points (traverse)
+    num_points = 100
+    x_coords = np.linspace(x1, x2, num_points)
+    y_coords = np.linspace(y1, y2, num_points)
+
+    # Debugging: Print coordinates to make sure they're being generated correctly
+    print(f"x_coords: {x_coords}")
+    print(f"y_coords: {y_coords}")
+
+    # Map the coordinates onto the grid to get the profile values (using scipy's map_coordinates)
+    profiles = {}
+    for oxide in oxides:
+        profile_values = scipy.ndimage.map_coordinates(grid[oxide], [y_coords, x_coords], order=1)
+        profiles[oxide] = profile_values
+    # Debugging: Check if the profile values are being calculated
+    for oxide, profile_values in profiles.items():
+        print(f"Profile values for {oxide}: {profile_values}")
+
+    # Get the scaling factors for X and Y coordinates from coord_data
+    # Convert pixel distances to micrometers
+    distance_pixels = np.sqrt((x_coords - x1) ** 2 + (y_coords - y1) ** 2)
+    distance_microns = distance_pixels * pixel_size
+    
+    # Debugging: Check the calculated micrometer distances
+    print(f"Distance in micrometers: {distance_microns}")
+
+    # Create subplots for each oxide profile
+    num_oxides = len(oxides)
+    fig, axs = plt.subplots(1, num_oxides, figsize=(3 * num_oxides, 3))  # Create subplots horizontally
+
+    if num_oxides == 1:  # If only one subplot, make axs a list to handle consistently
+        axs = [axs]
+
+    for i, (oxide, profile_values) in enumerate(profiles.items()):
+        ax = axs[i]  # Get the corresponding subplot for each oxide
+        # Calculate error as 10% of the profile values
+        
+        # Plot each oxide's profile with error bars
+        ax.scatter(distance_microns, profile_values, label=f"{oxide}", edgecolor='black', linewidths=0.5)
+
+        ax.set_title(f"Profile of {oxide}")
+        ax.set_xlabel(r"Distance ($\mu$m)")
+        ax.set_ylabel("Concentration (wt.%)")
+        ax.legend()  # Add a legend to each subplot
+
+    plt.tight_layout()
+
+    # Save the plot as a PDF file
+    pdf_filename = f"{sample_name}_profiles.pdf"
+    plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
+    print(f"Plot saved as {pdf_filename}")
+
+    # Show the plot
+    plt.show()
+
+    # --- Save the data to Excel ---
+    # Prepare a dictionary to store the traverse data
+    data_dict = {'Distance (µm)': distance_microns}
+    
+    # Add oxide profile values to the dictionary
+    for oxide, profile_values in profiles.items():
+        data_dict[f'{oxide} (wt.%)'] = profile_values
+    
+    # Convert dictionary to pandas DataFrame
+    df = pd.DataFrame(data_dict)
+    
+    # Save the DataFrame to an Excel file
+    excel_filename = f"{sample_name}_profiles_data.xlsx"
+    with pd.ExcelWriter(excel_filename, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Traverse Data')
+    print(f"Data saved to {excel_filename}")

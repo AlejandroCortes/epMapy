@@ -19,7 +19,7 @@ import pandas as pd  # to structure data sets
 import re  # to compare a set of string-type attributes
 import time  # to handle time-related calculations
 import matplotlib.pyplot as plt #default plotting library
-from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data  # importing external functions from functionsmapping.py
+from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data, extract_profile  # importing external functions from functionsmapping.py
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
 import scipy.ndimage
 
@@ -104,6 +104,7 @@ c, d = int(max(coord_data[coord_column_indices["NX"]])), int(max(coord_data[coor
 # Initialize arrays for various properties
 NK_A, NKC_A, Mg_MgFe2, K_Na = [np.zeros((c, d)) for _ in range(4)]
 Mf = np.zeros((c, d))
+coord_grids = {coordinate: np.zeros((c,d)) for coordinate in coord_column_indices.keys()}
 oxide_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
 oxideanh_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
 
@@ -116,6 +117,9 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
             col_index = oxide_column_indices[oxide]
             oxide_grids[oxide][nx, ny] = data_majors[col_index][idx]
             oxideanh_grids[oxide][nx, ny] = data_anhf[col_index][idx]
+        for coordinate, col_index in coord_column_indices.items():
+            col_index = coord_column_indices[coordinate]
+            coord_grids[coordinate][nx, ny] = coord_data[col_index][idx]
 
         # Fill derived properties
         Mf[nx, ny] = (
@@ -146,63 +150,10 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
             oxideanh_grids[oxide][nx, ny] = -1  # Placeholder for invalid points
         for grid in [Mf, NK_A, NKC_A, K_Na]:
             grid[nx, ny] = -1
+        for coordinate, col_index in coord_column_indices.items():
+            col_index = coord_column_indices[coordinate]
+            coord_grids[coordinate][nx, ny] = coord_data[col_index][idx]
 
-
-###########################################################################################################################################################
-# Function for binary profile extraction
-###########################################################################################################################################################
-def extract_profile(grid, oxide):
-    print("Select two points on the grid to define a traverse.")
-    
-    # Create a figure to display the grid
-    plt.figure(figsize=(6, 6))
-    im = plt.imshow(grid, cmap='viridis', vmin=0, vmax=np.max(grid))
-    plt.colorbar(im, label=f"{oxide} wt.%")
-    plt.title(f"Select points for {oxide} profile")
-    plt.axis('off')  # Hide axes for cleaner view
-    
-    # Ensure the plot is rendered first before selecting points
-    plt.show(block=False)  # This allows interaction while the plot stays open
-    points = plt.ginput(2)  # Allow the user to select two points on the plot
-    
-    if len(points) < 2:
-        print("Traverse selection canceled.")
-        return
-
-    # Unpack the coordinates of the two points
-    (x1, y1), (x2, y2) = points
-    print(f"Selected points: ({x1:.2f}, {y1:.2f}) to ({x2:.2f}, {y2:.2f})")
-
-    # Create an array of x and y coordinates between the two points (traverse)
-    num_points = 100
-    x_coords = np.linspace(x1, x2, num_points)
-    y_coords = np.linspace(y1, y2, num_points)
-
-    # Debugging: Print coordinates to make sure they're being generated correctly
-    print(f"x_coords: {x_coords}")
-    print(f"y_coords: {y_coords}")
-
-    # Map the coordinates onto the grid to get the profile values (using scipy's map_coordinates)
-    profile_values = scipy.ndimage.map_coordinates(grid, [y_coords, x_coords], order=1)
-    
-    # Debugging: Check if the profile values are being calculated
-    print(f"Profile values: {profile_values}")
-
-    # Calculate the distance between the points along the traverse
-    distances = np.sqrt((x_coords - x1) ** 2 + (y_coords - y1) ** 2)
-    
-    # Debugging: Check the calculated distances
-    print(f"Distances: {distances}")
-
-    # Plot the profile
-    plt.figure(figsize=(6, 4))
-    plt.scatter(distances, profile_values, label=f"{oxide} Profile", color='blue')
-    plt.xlabel("Distance (pixels)")
-    plt.ylabel(f"{oxide} Concentration (wt.%)")
-    plt.title(f"Binary Profile of {oxide}")
-    plt.grid(False)
-    plt.legend()
-    plt.show()
 
 ###########################################################################################################################################################
 # Plotting and profile extraction loop
@@ -239,13 +190,18 @@ while True:
     print(f"Plot saved as {pdf_filename}")
     plt.show()
 
-    # Ask user if they want to extract a profile
-    extract = input("Would you like to extract a binary profile from one of the plots? (yes/no): ").strip().lower()
-    if extract == 'yes':
-        for oxide in selected_oxides:
-            if oxide.strip() in oxide_grids:
-                extract_profile(oxide_grids[oxide.strip()], oxide.strip())
+    # Ask user which oxide to use for selecting the profile points
+    selected_oxide = input(f"Which oxide would you like to use for selecting the profile points? Choose from: {', '.join(selected_oxides)}: ").strip()
 
+    if selected_oxide not in selected_oxides:
+        print("Invalid oxide selection. Please select an oxide from the list.")
+        continue
+
+    # Ask user if they want to extract a profile
+    extract = input("Would you like to extract a traverse for the selected oxides? (yes/no): ").strip().lower()
+    if extract == 'yes':
+        extract_profile(oxide_grids,selected_oxides, pixel_size, selected_oxide, sample_name)
+        
     repeat = input("Would you like to plot another set of oxides? (yes/no): ").strip().lower()
     if repeat != 'yes':
         break
