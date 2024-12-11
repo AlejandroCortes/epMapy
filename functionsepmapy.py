@@ -3,8 +3,18 @@ import numpy as np
 import pandas as pd
 import re
 import scipy.ndimage
-import matplotlib.pyplot as plt #default plotting library
+import matplotlib.pyplot as plt
+import tkinter as tk
 
+def show_intro(message):
+    window = tk.Tk()  #Create the main window
+    window.title("Please read this before continuing...") #Heading of the window
+    window.geometry("400x500") #Window size
+    label = tk.Label(window, text=message, padx=20, pady=20, wraplength=350) #Label widget for the message with word wrapping
+    label.pack()
+    button = tk.Button(window, text="Close", command=window.destroy) #Button widget to close the window
+    button.pack(pady=10)
+    window.mainloop() #Needed so that the code keeps running
 
 def clean_data(X, oxide_column_indices):
     a = len(X[0, :])  # number of data points
@@ -47,7 +57,7 @@ def to_mol(X, oxide_column_indices):
         "SiO2": 60.080, "TiO2": 79.870, "Cr2O3": 152.000, "Al2O3": 101.960, "FeO": 71.840, 
         "MnO": 70.940, "NiO": 74.690, "MgO": 40.300, "CaO": 56.080, "Na2O": 61.980, 
         "K2O": 94.200, "P2O5": 283.880, "F": 18.998, "Cl": 35.450, "SO3": 80.060, 
-        "BaO": 153.330, "SrO": 103.620, "Fe2O3": 141.94
+        "BaO": 153.330, "SrO": 103.620, "Fe2O3": 141.94, "Total": 100
     }
 
     mol = np.copy(X)  # Copy the input to avoid overwriting
@@ -66,6 +76,7 @@ def to_mol(X, oxide_column_indices):
 def to_cat(X, oxide_column_indices):
     a = len(X[0, :])  # number of pixels
     b = len(X[:, 0])  # number of oxides + total
+
     total_index = oxide_column_indices.get('Total', None)
     
     ct = {
@@ -97,11 +108,12 @@ def to_cat(X, oxide_column_indices):
 def add_fe2o3(X, oxide_column_indices):
     Fe2_Fetot = 0.7  # Ratio Fe2+/Fe3+ for NNO
     X2 = np.copy(X)  # Copy the input to avoid overwriting
+    oxide_column_indices_fe = oxide_column_indices.copy()
 
     # Check if 'Fe2O3' column already exists in oxide_column_indices
-    if "Fe2O3" not in oxide_column_indices:
+    if "Fe2O3" not in oxide_column_indices_fe:
         # Calculate Fe2O3 from FeOtot and Fe2+/Fetot ratio
-        feo_index = oxide_column_indices.get('FeO', None)
+        feo_index = oxide_column_indices_fe.get('FeO', None)
         Fe2O3 = X[feo_index,:] * (1 - Fe2_Fetot) * 1.11134
         
         # Add the Fe2O3 data to the array
@@ -111,13 +123,13 @@ def add_fe2o3(X, oxide_column_indices):
         X2[feo_index,:] = X2[feo_index,:] * Fe2_Fetot
     
         # Update the oxide_column_indices to include Fe2O3
-        oxide_column_indices["Fe2O3"] = len(oxide_column_indices)  # Add Fe2O3 at the next available index
+        oxide_column_indices_fe["Fe2O3"] = len(oxide_column_indices_fe)  # Add Fe2O3 at the next available index
     else:
         # If Fe2O3 already exists, just return the original array without changes
         X2 = np.copy(X)  # No changes to the input array
         print("Fe2O3 column already exists, no update performed.")
     
-    return X2, oxide_column_indices
+    return X2, oxide_column_indices_fe
 
 def norm_calc(X, oxide_column_indices):
     Z = np.copy(X)  # Copy the input to avoid overwriting

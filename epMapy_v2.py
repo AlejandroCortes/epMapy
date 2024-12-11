@@ -1,45 +1,70 @@
-introd = f'''
-This script allows plotting EPMA quantitative maps and performing calculations with the data within, as well as treatment of single-point data acquired with the probe.
-Please be aware that this script is designed for the output file obtained with CalcImage (J. Donovan).
-The input file for this script is a .xlsx file, so you should convert .DAT to .xlsx before
-using it. It must contain at least the following column names (case and character sensitive):
-X, Y, NX, NY, NXY, SiO2 WT%, TiO2 WT%, Al2O3 WT%, FeO WT%, MnO WT%, MgO WT%, CaO WT%, Na2O WT%, K2O WT%, P2O5 WT%, Total
-X and Y: x-y coordinates EPMA position, NX and NY: pixel number in x-y (matrix)
-NXY: consecutive pixel number, all the rest values are weight percents including the total.
-Unfortunately, this script does not work with more oxides or halogens at the moment, but can be easily
-modified to do so by the user. Just keep in mind to also modify the external functions that are being used.
-'''
-print(introd)
-
 ###########################################################################################################################################################
 #  Import libraries
 ###########################################################################################################################################################
-import numpy as np  # to deal mathematically with multidimensional array objects
-import pandas as pd  # to structure data sets
-import re  # to compare a set of string-type attributes
-import time  # to handle time-related calculations
+import numpy as np  #do maths on multidimensional array objects
+import pandas as pd  #to read data sets
+import re  #to compare a set of string-type attributes
+import time  #to handle time-related calculations
 import matplotlib.pyplot as plt #default plotting library
-from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data, extract_profile  # importing external functions from functionsmapping.py
+# importing external functions from functionsmapping.py
+from functionsepmapy import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data, extract_profile, show_intro  
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
 import scipy.ndimage
 
 ###########################################################################################################################################################
+# Important information for User
+###########################################################################################################################################################
+Introd = """
+epMapy allows plotting EPMA quantitative maps and performing calculations with the data within, 
+as well as treatment of single-point data acquired with the microprobe.
+
+Please be aware that this script is designed for the output file obtained with CalcImage (J. Donovan) when processing maps.
+
+The input file for maps and single-point analyses should be in .DAT format 
+
+Regarding maps, the heading of the file should contain at least the following column names (character sensitive): X, Y, NX, NY, NXY, and oxide data 
+
+-X and Y: x-y coordinates EPMA position, NX and NY: pixel number in x-y (matrix)
+-NXY: consecutive pixel number, all the rest values are weight percents including the total.
+-Oxide data should be reported in WT% (e.g. SiO2 WT%, TiO2 WT%, Al2O3 WT%, MgO WT%
+
+Regarding single-points analyses, the heading of the file should contain at least sample name and the oxides"""
+
+show_intro(Introd)
+
+###########################################################################################################################################################
 # Loading EPMA data
 ###########################################################################################################################################################
-attempts = 2  # number of attempts allowed to input file's path
+attempts = 2  #Number of attempts allowed to input file's path
 
 for attempt in range(attempts):
-    file_path = input('Please type the path where the data file is located:   ')
+    file_path = input('Please type the path where the data file is located:   ') #Message to get input from user
     st0 = time.time()
     try:
-        data = pd.read_excel(file_path)  # try reading data file from specified path
+        data = pd.read_excel(file_path)  #Reading data file from specified path
         print(f'Loading of data was successful! Total elapsed time: {time.time() - st0:.1f} seconds')
-        break  # if successful, exit the loop
+        break  #exit the loop if file exists
     except FileNotFoundError:
+        #goes here if file cannot be read or does not exist
         print(f"File not found. Please check the path and try again. Attempt {attempt + 1} of {attempts}.")
         if attempt == attempts - 1:
-            print("Failed to load the file after multiple attempts. Exiting the software.")
+            #Exits the software after two attempts
+            print("Failed to load the file after multiple attempts. Exiting epMapy.")
             raise SystemExit
+
+###########################################################################################################################################################
+# Deciding how to proceed
+###########################################################################################################################################################
+#map_point = input('Do you want to process a map: (Yes/No)   ') #Message to get input from user
+#if map_point == 'yes':
+        #Asks user which oxide to use for selecting the profile points
+        #selected_oxide = input(f"Which oxide would you like to use for selecting the profile points? Choose from: {', '.join(selected_oxides)}: ").strip()
+
+        #if selected_oxide not in selected_oxides:
+            #print("Invalid oxide selection. Please select an oxide from the list.")
+            #continue
+        #extract_profile(oxide_grids,selected_oxides, pixel_size, selected_oxide, sample_name)
+
 
 ###########################################################################################################################################################
 # Initialising and filling dictionaries for compositions and coordinates.
@@ -48,65 +73,71 @@ oxide_columns = {}
 coord_columns = {}
 oxide_columns_original = {}
 
-# Normalize column names by removing 'WT%' but retain capitalization
+#Removes 'WT%' from column names but keeps capitalisation
 data.columns = data.columns.str.replace(" WT%", "", regex=True).str.replace("wt%", "", regex=True).str.strip()
-# Create a mapping of original column names to normalized column names
-#column_map = dict(zip(normalized_columns, data.columns))
 
-# Iterate over normalized column names for matching
+#Iterate over column names for matching with potential oxides and coordinates
 for norm_col in data.columns:
     if re.search(r"(SiO2|TiO2|Cr2O3|Al2O3|FeO|MnO|NiO|MgO|CaO|Na2O|K2O|P2O5|F|Cl|SO3|BaO|SrO|Total)", norm_col, re.IGNORECASE):
-        print(f"Matched oxide column: {norm_col}")
-        oxide_columns[norm_col] = data[norm_col].values  # Use the original column name
-        oxide_columns_original[norm_col] = data[norm_col].values  # Use the original column name
+        print(f"Matched oxide column: {norm_col}") #prints which oxides are in the file
+        oxide_columns[norm_col] = data[norm_col].values  #Fills in the values of each oxide in the dictionary
+        oxide_columns_original[norm_col] = data[norm_col].values  #clone dictionary to keep original column names for following steps
     elif re.search(r"(X|Y|NX|NY)", norm_col, re.IGNORECASE):
         print(f"Matched coordinate column: {norm_col}")
-        coord_columns[norm_col] = data[norm_col].values  # Use the original column name
+        coord_columns[norm_col] = data[norm_col].values  #Fills in the values of each coordinate or pixel number in the dictionary
 
-# Define potential oxides or elements that will be needed for calculations
-expected_oxides = ["SiO2", "TiO2", "Cr2O3", "Al2O3", "FeO", "MnO", "NiO", "MgO", "CaO", "Na2O", "K2O", "P2O5", "F", "Cl", "SO3", "BaO", "SrO", "Total"]
-
-# Fill missing oxide columns with very small numbers
+#List of potential oxides measured with the microprobe
+expected_oxides = ["SiO2", "TiO2", "Cr2O3", "Al2O3", "FeO", "MnO", "NiO", "MgO", "CaO", 
+                   "Na2O", "K2O", "P2O5", "F", "Cl", "SO3", "BaO", "SrO", "Total"]
+#Fills missing oxide columns with very small numbers to avoid dividing by zero or NAN.
 for oxide in expected_oxides:
     if oxide not in oxide_columns:
         print(f"{oxide} column not found. Filling with 0.00000000001 to avoid issues when doing calculations.")
-        oxide_columns[oxide] = np.full(len(data), 0.00000000001)  # Fill with 0.00000000001
+        oxide_columns[oxide] = np.full(len(data), 0.00000000001)  #Fills with 0.00000000001
 
 ###########################################################################################################################################################
-# Convert dictionaries into numpy arrays but keeping their column indexes
+# Extract column heads and convert dictionaries into numpy arrays
 ###########################################################################################################################################################
+#The following dictionary also includes also those oxides that were filled with 0.00000000001 for calculation purposes
 oxide_column_indices = {col: index for index, col in enumerate(oxide_columns.keys())}
+#The following clone dictiornary doesnt contain the oxides that were filled with 0.000000000001 values
 oxide_column_indices_original = {col: index for index, col in enumerate(oxide_columns_original.keys())}
+#coordinates and pixel number dictiornary
 coord_column_indices = {col: index for index, col in enumerate(coord_columns.keys())}
+#numpy arrays
 oxide_data = np.array([oxide_columns[key] for key in oxide_columns])
 coord_data = np.array([coord_columns[key] for key in coord_columns])
 
-
 ###########################################################################################################################################################
-# Calling multiple functions
+#Structuring data so that it can be plotted
 ###########################################################################################################################################################
-data_majors = clean_data(oxide_data, oxide_column_indices)   #cleaning holes and cracks that retrive very low totals
-data_anhf = to_anhydrous(oxide_data, oxide_column_indices) #calculates anhydrous-base oxide compositions wt.%
-data_molf   = to_mol(data_anhf, oxide_column_indices)         #calculates anhydrous-based oxide compositions mol
-data_catf   = to_cat(data_molf, oxide_column_indices)         #calculates anhydrous-based cation compositions mol
-fe2o3_included, oxide_column_indices = add_fe2o3(data_majors,oxide_column_indices)
-fe2o3_anh = to_anhydrous(fe2o3_included, oxide_column_indices)
-fe2o3_mol = to_mol(fe2o3_anh, oxide_column_indices)
-#data_molf2  = to_mol(to_anhydrous(add_fe2o3(data_majors, oxide_column_indices), oxide_column_indices),oxide_column_indices) #calculates oxide compositions including Fe2O3 mol
-data_normf  = norm_calc(fe2o3_mol, oxide_column_indices) #calculates normative mineralogy
-
-###########################################################################################################################################################
-# Structuring data so that it can be plotted
-###########################################################################################################################################################
-# Ensure the grid size matches the maximum NX and NY values
-c, d = int(max(coord_data[coord_column_indices["NX"]])), int(max(coord_data[coord_column_indices["NY"]]))
+c, d = int(max(coord_data[coord_column_indices["NX"]])), int(max(coord_data[coord_column_indices["NY"]])) #Grid size matches the maximum NX and NY values
 
 # Initialize arrays for various properties
-NK_A, NKC_A, Mg_MgFe2, K_Na = [np.zeros((c, d)) for _ in range(4)]
-Mf = np.zeros((c, d))
+# molar indexes: NK_A:Na2O+K2O/Al2O3, NKC_A:Na2O+K2O+CaO/Al2O3, K_Na:K2O/Na2O, M_f:
+NK_A, NKC_A, Mg_MgFe2, K_Na, M_f = [np.zeros((c, d)) for _ in range(5)]
+
+#creating grids with coordinates and
 coord_grids = {coordinate: np.zeros((c,d)) for coordinate in coord_column_indices.keys()}
-oxide_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
-oxideanh_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
+oxide_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices_original.keys()}
+oxidef_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices_original.keys()}
+data_majors = clean_data(oxide_data, oxide_column_indices)   #cleaning holes and cracks that retrive very low totals
+print(oxide_column_indices)
+fe2o3_included, oxide_column_indices_fe = add_fe2o3(data_majors,oxide_column_indices) #calculates fe2o3 and updates the oxide_column_indices
+print(oxide_column_indices_fe,oxide_column_indices)
+oxidef_grids_fe = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices_fe.keys()}
+data_anhf = to_anhydrous(data_majors, oxide_column_indices) #calculates anhydrous-base oxide compositions wt.%
+data_anhf_fe = to_anhydrous(fe2o3_included, oxide_column_indices_fe) #calculates anhydrous-base oxide compositions wt.%
+data_molf   = to_mol(data_anhf, oxide_column_indices)         #calculates anhydrous-based oxide compositions mol
+data_molf_fe   = to_mol(data_anhf_fe, oxide_column_indices_fe)         #calculates anhydrous-based oxide compositions mol
+data_catf   = to_cat(data_molf, oxide_column_indices)         #calculates anhydrous-based cation compositions mol
+data_mol   = to_mol(data_majors, oxide_column_indices)         #calculates anhydrous-based oxide compositions mol
+data_cat   = to_cat(data_mol, oxide_column_indices)         #calculates anhydrous-based cation compositions mol
+data_normf  = norm_calc(data_molf_fe, oxide_column_indices_fe) #calculates normative mineralogy
+
+#oxidefe3_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
+
+#molanh_grids = {oxide: np.zeros((c, d)) for oxide in oxide_column_indices.keys()}
 
 # Loop through all data points to fill grid arrays
 for idx in range(len(coord_data[coord_column_indices["NXY"]])):
@@ -116,13 +147,14 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
         for oxide, col_index in oxide_column_indices_original.items():
             col_index = oxide_column_indices[oxide]
             oxide_grids[oxide][nx, ny] = data_majors[col_index][idx]
-            oxideanh_grids[oxide][nx, ny] = data_anhf[col_index][idx]
+            oxidef_grids[oxide][nx, ny] = data_anhf[col_index][idx]
+            oxidef_grids_fe[oxide][nx, ny] = data_anhf_fe[col_index][idx]
         for coordinate, col_index in coord_column_indices.items():
             col_index = coord_column_indices[coordinate]
             coord_grids[coordinate][nx, ny] = coord_data[col_index][idx]
 
         # Fill derived properties
-        Mf[nx, ny] = (
+        M_f[nx, ny] = (
             (data_catf[oxide_column_indices["Na2O"],idx] +
              data_catf[oxide_column_indices["K2O"],idx] +
              (data_catf[oxide_column_indices["CaO"],idx] * 2)) /
@@ -147,8 +179,8 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
     else:
         for oxide in oxide_column_indices_original.keys():
             oxide_grids[oxide][nx, ny] = -1  # Placeholder for invalid points
-            oxideanh_grids[oxide][nx, ny] = -1  # Placeholder for invalid points
-        for grid in [Mf, NK_A, NKC_A, K_Na]:
+            oxidef_grids[oxide][nx, ny] = -1  # Placeholder for invalid points
+        for grid in [M_f, NK_A, NKC_A, K_Na]:
             grid[nx, ny] = -1
         for coordinate, col_index in coord_column_indices.items():
             col_index = coord_column_indices[coordinate]
@@ -157,6 +189,148 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
 
 ###########################################################################################################################################################
 # Plotting and profile extraction loop
+###########################################################################################################################################################
+sample_name = input("Enter the sample name: ").strip()
+pixel_size = (coord_data[coord_column_indices["X"],1] - coord_data[coord_column_indices["X"],0]) * 1000
+
+# Loop to allow multiple selections of data to plot
+while True:
+    # Prompt user to select oxides and/or other grids to plot
+    print("Available data to plot:")
+    available_grids = ['Raw_Oxides', 'Anhydrous_Oxides', 'Zircon_Saturation_Index', 'Peralkalinity_Index', 'Peraluminous_Index', 'K_Na_Ratio']  # Add more grids if needed
+    print(f"Available options: {', '.join(available_grids)}")
+    
+    selected_data = input("Enter the type of data you want to plot: ").lower()
+    selected_data = [data.strip() for data in selected_data]
+
+    if selected_data == 'raw_oxides':
+        print("Available oxides to plot:", list(oxide_columns_original.keys()))
+        selected_oxides = input("Enter the oxides you want to plot, separated by commas: ").split(',')
+        cm = 1 / 2.54
+        plt.figure(figsize=(6.5 * cm, 6.5 * cm))
+        fig, axs = plt.subplots(1, len(selected_oxides), figsize=(3 * len(selected_oxides), 3))
+
+        for i, oxide in enumerate(selected_oxides):
+            oxide = oxide.strip()
+            if oxide in oxide_grids:
+                ax = axs[i] if len(selected_oxides) > 1 else axs
+                im = ax.imshow(oxide_grids[oxide], cmap='viridis', vmin=0, vmax=np.max(oxide_grids[oxide]))
+                im.cmap.set_under('black')
+                ax.set_title(f"{oxide} wt.%")
+                ax.axis("off")
+                fig.colorbar(im, ax=ax)
+            else:
+                print(f"Warning: {oxide} is not a valid oxide.")
+
+        scalebar = ScaleBar(pixel_size,"um")
+        plt.gca().add_artist(scalebar)
+        plt.tight_layout()
+
+        formatted_oxides = "_".join([oxide.strip() for oxide in selected_oxides])
+        pdf_filename = f"{sample_name}_{formatted_oxides}.pdf"
+        plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
+        print(f"Plot saved as {pdf_filename}")
+        plt.show()
+    
+    if selected_data == 'anhydrous_oxides':
+        print("Available oxides to plot:", list(oxide_columns_original.keys()))
+        selected_oxides = input("Enter the oxides you want to plot, separated by commas: ").split(',')
+        cm = 1 / 2.54
+        plt.figure(figsize=(6.5 * cm, 6.5 * cm))
+        fig, axs = plt.subplots(1, len(selected_oxides), figsize=(3 * len(selected_oxides), 3))
+
+        for i, oxide in enumerate(selected_oxides):
+            oxide = oxide.strip()
+            if oxide in oxidef_grids:
+                ax = axs[i] if len(selected_oxides) > 1 else axs
+                im = ax.imshow(oxidef_grids[oxide], cmap='viridis', vmin=0, vmax=np.max(oxidef_grids[oxide]))
+                im.cmap.set_under('black')
+                ax.set_title(f"{oxide} wt.%")
+                ax.axis("off")
+                fig.colorbar(im, ax=ax)
+            else:
+                print(f"Warning: {oxide} is not a valid oxide.")
+
+        scalebar = ScaleBar(pixel_size,"um")
+        plt.gca().add_artist(scalebar)
+        plt.tight_layout()
+
+        formatted_oxides = "_".join([oxide.strip() for oxide in selected_oxides])
+        pdf_filename = f"{sample_name}_anhydrous_{formatted_oxides}.pdf"
+        plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
+        print(f"Plot saved as {pdf_filename}")
+        plt.show()
+    if data == 'zircon_saturation_index':
+        ax = axs
+        im = ax.imshow(M_f, cmap='viridis', vmin=np.min(M_f), vmax=np.max(M_f))
+        im.cmap.set_under('black')
+        ax.set_title("M_f")
+        ax.axis("off")
+        fig.colorbar(im, ax=ax)
+    scalebar = ScaleBar(pixel_size,"um")
+    plt.gca().add_artist(scalebar)
+    plt.tight_layout()
+
+    formatted_oxides = "_".join([oxide.strip() for oxide in selected_oxides])
+    pdf_filename = f"{sample_name}_anhydrous_{formatted_oxides}.pdf"
+    plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
+    print(f"Plot saved as {pdf_filename}")
+    plt.show()
+    
+    if data == 'Peralkalinity_Index':
+        ax = axs[i] if len(selected_data) > 1 else axs
+        im = ax.imshow(NK_A, cmap='viridis', vmin=np.min(NK_A), vmax=np.max(NK_A))
+        im.cmap.set_under('black')
+        ax.set_title("NK_A")
+        ax.axis("off")
+        fig.colorbar(im, ax=ax)
+    if data == 'NKC_A':
+            ax = axs[i] if len(selected_data) > 1 else axs
+            im = ax.imshow(NKC_A, cmap='viridis', vmin=np.min(NKC_A), vmax=np.max(NKC_A))
+            im.cmap.set_under('black')
+            ax.set_title("NKC_A")
+            ax.axis("off")
+            fig.colorbar(im, ax=ax)
+        elif data == 'K_Na':
+            ax = axs[i] if len(selected_data) > 1 else axs
+            im = ax.imshow(K_Na, cmap='viridis', vmin=np.min(K_Na), vmax=np.max(K_Na))
+            im.cmap.set_under('black')
+            ax.set_title("K_Na")
+            ax.axis("off")
+            fig.colorbar(im, ax=ax)
+        else:
+            print(f"Warning: {data} is not a valid option.")
+    
+    # Add scale bar for the images
+    scalebar = ScaleBar(pixel_size, "um")
+    plt.gca().add_artist(scalebar)
+    plt.tight_layout()
+
+    # Save the plot as a PDF
+    formatted_data = "_".join([data.strip() for data in selected_data])
+    pdf_filename = f"{sample_name}_{formatted_data}.pdf"
+    plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
+    print(f"Plot saved as {pdf_filename}")
+    plt.show()
+
+    # Ask User if they want to extract a profile
+    extract = input("Would you like to extract a traverse for the selected data? (yes/no): ").strip().lower()
+    if extract == 'yes':
+        # Ask user which oxide or data type to use for selecting the profile points
+        selected_data_for_profile = input(f"Which data would you like to use for selecting the profile points? Choose from: {', '.join(selected_data)}: ").strip()
+
+        if selected_data_for_profile not in selected_data:
+            print("Invalid selection. Please choose from the available options.")
+            continue
+        extract_profile(oxide_grids, selected_data, pixel_size, selected_data_for_profile, sample_name)
+
+    # Ask if the user wants to plot another set of data
+    repeat = input("Would you like to plot another set of data? (yes/no): ").strip().lower()
+    if repeat != 'yes':
+        break
+
+###########################################################################################################################################################
+# Plotting and profile extraction loop2
 ###########################################################################################################################################################
 sample_name = input("Enter the sample name: ").strip()
 pixel_size = (coord_data[coord_column_indices["X"],1]-coord_data[coord_column_indices["X"],0])*1000
@@ -190,18 +364,19 @@ while True:
     print(f"Plot saved as {pdf_filename}")
     plt.show()
 
-    # Ask user which oxide to use for selecting the profile points
-    selected_oxide = input(f"Which oxide would you like to use for selecting the profile points? Choose from: {', '.join(selected_oxides)}: ").strip()
-
-    if selected_oxide not in selected_oxides:
-        print("Invalid oxide selection. Please select an oxide from the list.")
-        continue
-
-    # Ask user if they want to extract a profile
+    #Asks User if they want to extract a profile
     extract = input("Would you like to extract a traverse for the selected oxides? (yes/no): ").strip().lower()
     if extract == 'yes':
+        #Asks user which oxide to use for selecting the profile points
+        selected_oxide = input(f"Which oxide would you like to use for selecting the profile points? Choose from: {', '.join(selected_oxides)}: ").strip()
+
+        if selected_oxide not in selected_oxides:
+            print("Invalid oxide selection. Please select an oxide from the list.")
+            continue
         extract_profile(oxide_grids,selected_oxides, pixel_size, selected_oxide, sample_name)
         
     repeat = input("Would you like to plot another set of oxides? (yes/no): ").strip().lower()
     if repeat != 'yes':
         break
+
+    

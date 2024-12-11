@@ -12,7 +12,7 @@ plt.rcParams.update({'font.size': 7}) #defined font size
 plt.rcParams['figure.dpi']   = 200 #increases the quality of images
 import mpltern #to plot ternary diagrams
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
-from functionsmapping import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data #importing external functions
+from functionsepmapy import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data #importing external functions
 import matplotlib
 matplotlib.use('Agg')
 
