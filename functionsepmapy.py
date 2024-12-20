@@ -300,7 +300,7 @@ def extract_profile(grid, oxides, pixel_size, selected_oxide, sample_name):
     print(f"Selected points: ({x1:.2f}, {y1:.2f}) to ({x2:.2f}, {y2:.2f})")
 
     # Create an array of x and y coordinates between the two points (traverse)
-    num_points = 100
+    num_points = 50
     x_coords = np.linspace(x1, x2, num_points)
     y_coords = np.linspace(y1, y2, num_points)
 
