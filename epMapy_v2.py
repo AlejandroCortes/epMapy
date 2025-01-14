@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt #default plotting library
 from functionsepmapy import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data, extract_profile, show_intro  
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
 import scipy.ndimage
+import os
 
 ###########################################################################################################################################################
 # Important information for User
@@ -35,14 +36,29 @@ show_intro(Introd)
 ###########################################################################################################################################################
 # Loading EPMA data
 ###########################################################################################################################################################
-attempts = 2  #Number of attempts allowed to input file's path
+attempts = 3  #Number of attempts allowed to input file's path
 
 for attempt in range(attempts):
     file_path = input('Please type the path where the data file is located:   ') #Message to get input from user
-    st0 = time.time()
+    #changing name of the file
+    extraname = r'_FirstPass_\d{5}__Oxide_Image_Classify' #Part of the file name
+    new_file_name = re.sub(extraname, '', os.path.basename(file_path)) #simplifies the file name by removing the previous part
+    directory = os.path.dirname(file_path) #directory of the input excluding the name
+    new_file_path = os.path.join(directory, new_file_name) #new path using the new name
+    os.rename(file_path, new_file_path) #renames the original file
+    print(f"File renamed to: {new_file_path}")
+
+    with open (new_file_path, 'r') as file:
+        lines = file.readlines()
+    lines[1] = lines[1].replace('\t\t', '\t')
+
+    with open(new_file_path, 'w') as corrected_file:
+        corrected_file.writelines(lines)
+
+    startcounting = time.time() #timer starts
     try:
-        data = pd.read_excel(file_path)  #Reading data file from specified path
-        print(f'Loading of data was successful! Total elapsed time: {time.time() - st0:.1f} seconds')
+        data = pd.read_csv(new_file_path, sep="\t", header=1)  #Reading data file from specified path but skipping the first row of data
+        print(f'Loading of data was successful! Total elapsed time: {time.time() - startcounting:.1f} seconds')
         break  #exit the loop if file exists
     except FileNotFoundError:
         #goes here if file cannot be read or does not exist
@@ -51,7 +67,7 @@ for attempt in range(attempts):
             #Exits the software after two attempts
             print("Failed to load the file after multiple attempts. Exiting epMapy.")
             raise SystemExit
-
+print(data.head(5))
 ###########################################################################################################################################################
 # Deciding how to proceed
 ###########################################################################################################################################################
@@ -78,7 +94,7 @@ data.columns = data.columns.str.replace(" WT%", "", regex=True).str.replace("wt%
 
 #Iterate over column names for matching with potential oxides and coordinates
 for norm_col in data.columns:
-    if re.search(r"(SiO2|TiO2|Cr2O3|Al2O3|FeO|MnO|NiO|MgO|CaO|Na2O|K2O|P2O5|F|Cl|SO3|BaO|SrO|Total)", norm_col, re.IGNORECASE):
+    if re.search(r"(SiO2|TiO2|Cr2O3|Al2O3|FeO|MnO|NiO|MgO|CaO|Na2O|K2O|P2O5|F|Cl|SO3|BaO|SrO|La2O3|Ce2O3|Total)", norm_col, re.IGNORECASE):
         print(f"Matched oxide column: {norm_col}") #prints which oxides are in the file
         oxide_columns[norm_col] = data[norm_col].values  #Fills in the values of each oxide in the dictionary
         oxide_columns_original[norm_col] = data[norm_col].values  #clone dictionary to keep original column names for following steps
@@ -88,7 +104,7 @@ for norm_col in data.columns:
 
 #List of potential oxides measured with the microprobe
 expected_oxides = ["SiO2", "TiO2", "Cr2O3", "Al2O3", "FeO", "MnO", "NiO", "MgO", "CaO", 
-                   "Na2O", "K2O", "P2O5", "F", "Cl", "SO3", "BaO", "SrO", "Total"]
+                   "Na2O", "K2O", "P2O5", "F", "Cl", "SO3", "BaO", "SrO", "La2O3", "Ce2O3", "Total"]
 #Fills missing oxide columns with very small numbers to avoid dividing by zero or NAN.
 for oxide in expected_oxides:
     if oxide not in oxide_columns:
@@ -188,13 +204,18 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
 
 
 ###########################################################################################################################################################
-# Plotting and profile extraction loop2
+# Plotting and profile extraction loop
 ###########################################################################################################################################################
+# Main loop for plotting and profile extraction
 sample_name = input("Enter the sample name: ").strip()
-pixel_size = (coord_data[coord_column_indices["X"],1]-coord_data[coord_column_indices["X"],0])*1000
+pixel_size = (coord_data[coord_column_indices["X"], 1] - coord_data[coord_column_indices["X"], 0]) * 1000
+
 while True:
-    print("Available oxides to plot:", list(oxide_columns_original.keys()))
-    selected_oxides = input("Enter the oxides you want to plot, separated by commas: ").split(',')
+    selected_oxides_input = input("Enter the oxides you want to plot, separated by commas, or type 'all' to plot all: ").strip()
+    if selected_oxides_input.lower() == 'all':
+        selected_oxides = list(oxide_columns_original.keys())  # Select all available oxides
+    else:
+        selected_oxides = [oxide.strip() for oxide in selected_oxides_input.split(',')]  # Creates a list with the selected oxides
 
     cm = 1 / 2.54
     plt.figure(figsize=(6.5 * cm, 6.5 * cm))
@@ -212,7 +233,7 @@ while True:
         else:
             print(f"Warning: {oxide} is not a valid oxide.")
 
-    scalebar = ScaleBar(pixel_size,"um")
+    scalebar = ScaleBar(pixel_size, "um")
     plt.gca().add_artist(scalebar)
     plt.tight_layout()
 
@@ -222,19 +243,27 @@ while True:
     print(f"Plot saved as {pdf_filename}")
     plt.show()
 
-    #Asks User if they want to extract a profile
-    extract = input("Would you like to extract a traverse for the selected oxides? (yes/no): ").strip().lower()
-    if extract == 'yes':
-        #Asks user which oxide to use for selecting the profile points
-        selected_oxide = input(f"Which oxide would you like to use for selecting the profile points? Choose from: {', '.join(selected_oxides)}: ").strip()
+    # Now, enter a loop to allow multiple profile extractions
+    profile_index = 1  # Initialize profile index
+    while True:
+        # Ask User if they want to extract a profile
+        extract = input("Would you like to extract a traverse for the selected oxides? (yes/no): ").strip().lower()
+        if extract == 'yes':
+            # Ask user which oxide to use for selecting the profile points
+            selected_oxide = input(f"Which oxide would you like to use for selecting the profile points? Choose from: {', '.join(selected_oxides)}: ").strip()
 
-        if selected_oxide not in selected_oxides:
-            print("Invalid oxide selection. Please select an oxide from the list.")
-            continue
-        extract_profile(oxide_grids,selected_oxides, pixel_size, selected_oxide, sample_name)
-        
+            if selected_oxide not in selected_oxides:
+                print("Invalid oxide selection. Please select an oxide from the list.")
+                continue
+
+            # Extract profile for the selected oxide
+            extract_profile(oxide_grids, selected_oxides, pixel_size, selected_oxide, sample_name, profile_index)
+            profile_index += 1  # Increment the profile index after each extraction
+
+        else:
+            break  # Exit the profile extraction loop if the user is done
+
+    # Ask if the user wants to plot another set of oxides after extracting profiles
     repeat = input("Would you like to plot another set of oxides? (yes/no): ").strip().lower()
     if repeat != 'yes':
-        break
-
-    
+        break  # Exit the entire loop if the user doesn't want to plot another set
