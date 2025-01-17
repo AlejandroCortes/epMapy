@@ -6,6 +6,7 @@ import scipy.ndimage
 import matplotlib.pyplot as plt
 import tkinter as tk
 import os
+from openpyxl import load_workbook
 def show_intro(message):
     window = tk.Tk()  #Create the main window
     window.title("Please read this before continuing...") #Heading of the window
@@ -432,6 +433,7 @@ def extract_profile(grid, oxides, pixel_size, selected_oxide, sample_name, profi
     fig, ax = plt.subplots(figsize=(6, 6))
     im = ax.imshow(grid[selected_oxide], cmap='viridis', vmin=0, vmax=np.max(grid[selected_oxide]))
     ax.plot([x1, x2], [y1, y2], color='red', linewidth=2, label="Profile Line")  # Draw the profile line
+    ax.arrow(x1,y1,x2-x1,y2-y1,width=1,facecolor='black',edgecolor='white',length_includes_head=True)
     ax.set_title(f"{selected_oxide} with Profile Line")
     ax.axis('off')
     ax.legend()
@@ -447,14 +449,30 @@ def extract_profile(grid, oxides, pixel_size, selected_oxide, sample_name, profi
     for oxide, profile_values in profiles.items():
         data_dict[f'{oxide} (wt.%)'] = profile_values
     df = pd.DataFrame(data_dict)
-    
+
     # Define the Excel filename
     excel_filename = f"{sample_name}_profiles_data.xlsx"
-    
+
+    # Check if the file exists
+    if not os.path.exists(excel_filename):
+        # Create an empty file if it doesn't exist
+        with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
+            # Write an empty dataframe or just create the sheet to initialize the file
+            pd.DataFrame().to_excel(writer, index=False, sheet_name="Sheet1")
+
     # Create a new sheet name based on profile index
     sheet_name = f"Profile_{profile_index}"
 
+    # Load the existing workbook to check if the sheet exists
+    book = load_workbook(excel_filename)
+
+    # If the sheet already exists, delete it
+    if sheet_name in book.sheetnames:
+        del book[sheet_name]
+
+    # Append data to the file (with the sheet being replaced if it exists)
     with pd.ExcelWriter(excel_filename, engine='openpyxl', mode='a') as writer:
+        # Write the data to the specified sheet name
         df.to_excel(writer, index=False, sheet_name=sheet_name)
 
     print(f"Data saved to {excel_filename} in sheet {sheet_name}")
