@@ -4,6 +4,8 @@ import pandas as pd #for printing nice tables (pd.DataFrame)
 import seaborn as sbn #extra version of plt
 import matplotlib.patches as mpatches #from brokenaxes import brokenaxes
 import matplotlib
+from matplotlib.path import Path
+from matplotlib.transforms import Bbox
 
 # Reading excel file with major and trace elements in bulk rocks
 data = pd.read_excel(r'C:\\Users\\alejc\\Documents\\GitHub\\epMapy\\Finley.xlsx')
