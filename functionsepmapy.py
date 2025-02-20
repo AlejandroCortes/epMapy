@@ -58,7 +58,7 @@ def to_mol(X, oxide_column_indices):
         "SiO2": 60.080, "TiO2": 79.870, "Cr2O3": 152.000, "Al2O3": 101.960, "FeO": 71.840, 
         "MnO": 70.940, "NiO": 74.690, "MgO": 40.300, "CaO": 56.080, "Na2O": 61.980, 
         "K2O": 94.200, "P2O5": 283.880, "F": 18.998, "Cl": 35.450, "SO3": 80.060, 
-        "BaO": 153.330, "SrO": 103.620, "La2O3": 325.81, "Ce2O3": 328.24, "Fe2O3": 141.94, "Total": 100
+        "BaO": 153.330, "SrO": 103.620, "La2O3": 325.81, "Ce2O3": 328.24, "PbO":223.2, "Fe2O3": 141.94, "Total": 100
     }
 
     mol = np.copy(X)  # Copy the input to avoid overwriting
@@ -84,7 +84,7 @@ def to_cat(X, oxide_column_indices):
         "SiO2": 1, "TiO2": 1, "Cr2O3": 2, "Al2O3": 2, "FeO": 1,
         "MnO": 1, "NiO": 1, "MgO": 1, "CaO": 1, "Na2O": 2,
         "K2O": 2, "P2O5": 2, "F": 1, "Cl": 1, "SO3": 1,
-        "BaO": 1, "SrO": 1, "La2O3": 2, "Ce2O3": 2, "Fe2O3": 2
+        "BaO": 1, "SrO": 1, "La2O3": 2, "Ce2O3": 2, "PbO":1, "Fe2O3": 2
     }
     
     cat = np.copy(X)  # copies the input to avoid overwriting
@@ -160,7 +160,7 @@ def norm_calc(X, oxide_column_indices):
         "SiO2": 60.080, "TiO2": 79.870, "Cr2O3": 152.000, "Al2O3": 101.960, "FeO": 71.840, 
         "MnO": 70.940, "NiO": 74.690, "MgO": 40.300, "CaO": 56.080, "Na2O": 61.980, 
         "K2O": 94.200, "P2O5": 283.880, "F": 18.998, "Cl": 35.450, "SO3": 80.060, 
-        "BaO": 153.330, "SrO": 103.620, "La2O3": 325.81, "Ce2O3": 328.24, "Fe2O3": 141.94
+        "BaO": 153.330, "SrO": 103.620, "La2O3": 325.81, "Ce2O3": 328.24, "PbO":223.2, "Fe2O3": 141.94
     }
 
     oxide_indices = {oxide: oxide_column_indices.get(oxide, None) for oxide in oxide_names}
