@@ -10,9 +10,7 @@ def get_file_path():
     global file_path
     # Open and return file path
     file_path= filedialog.askopenfilename(title = "Select A File", filetypes = (("text files", "*.DAT"), ("Excel spreadsheet", "*.xlsx")))
-    l1 = ttk.Label(root, text = "File path: " + file_path).pack()
-    sv_ttk.set_theme("dark")
-
+    root.destroy()
 welcome = """
 
 Welcome to epMin
@@ -39,6 +37,7 @@ sv_ttk.set_theme("dark")
 
 root.mainloop()
 
+print(file_path)
 
 
 
