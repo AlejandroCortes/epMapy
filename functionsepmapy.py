@@ -17,6 +17,14 @@ def show_intro(message):
     button.pack(pady=10)
     window.mainloop() #Needed so that the code keeps running
 
+def browse_win():
+    filename = tk.filedialog.askopenfilename(initialdr = "/",
+                                             title = "Select a file",
+                                             filetype = (("Text files","*.DAT"),
+                                                         ("Excel files","*.xlsx"),
+                                                         ))
+    tk.label_file_explorer.configure(text="file Opened: "+filename)
+
 def clean_data(X, oxide_column_indices):
     a = len(X[0, :])  # number of data points
     b = len(X[:, 0])  # number of oxides + total
