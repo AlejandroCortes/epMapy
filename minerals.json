@@ -1,0 +1,88 @@
+{
+    "Olivine": {
+      "cations": 3,
+      "oxygens": 4,
+      "OH_sites": 0
+    },
+    "Pyroxene": {
+      "cations": 4,
+      "oxygens": 6,
+      "OH_sites": 0
+    },
+    "Feldspar": {
+      "cations": 5,
+      "oxygens": 8,
+      "OH_sites": 0
+    },
+    "Amphibole (13+NaKCa)": {
+      "cations": 13,
+      "oxygens": 23,
+      "OH_sites": 2
+    },
+    "Amphibole (15+NaK)": {
+      "cations": 15,
+      "oxygens": 23,
+      "OH_sites": 2
+    },
+    "Amphibole (15+K)": {
+      "cations": 15,
+      "oxygens": 23,
+      "OH_sites": 2
+    },
+    "Biotite (trioctahedral)": {
+      "cations": 8,
+      "oxygens": 11,
+      "OH_sites": 2
+    },
+    "Muscovite (dioctahedral)": {
+      "cations": 7,
+      "oxygens": 11,
+      "OH_sites": 2
+    },
+    "Chlorite": {
+      "cations": 6,
+      "oxygens": 18,
+      "OH_sites": 4
+    },
+    "Talc": {
+      "cations": 7,
+      "oxygens": 11,
+      "OH_sites": 2
+    },
+    "Sapphirine": {
+      "cations": 14,
+      "oxygens": 20,
+      "OH_sites": 0
+    },
+    "Nepheline": {
+      "cations": 3,
+      "oxygens": 4,
+      "OH_sites": 0
+    },
+    "Apatite": {
+      "cations": 8,
+      "oxygens": 12.5,
+      "OH_sites": 1
+    },
+    "Oxide (cubic)": {
+      "cations": 3,
+      "oxygens": 4,
+      "OH_sites": 0
+    },
+    "Oxide (Rhombic)": {
+      "cations": 2,
+      "oxygens": 3,
+      "OH_sites": 0
+    },
+    "Carbonate": {
+      "cations": 1,
+      "oxygens": 3,
+      "OH_sites": 1
+    },
+    "Garnet": {
+      "cations": 8,
+      "oxygens": 12,
+      "OH_sites": 0
+    }
+  }
+  

@@ -1,0 +1,695 @@
+{
+    "H2O": {
+        "molecular_weight": 18.015,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "Li2O": {
+        "molecular_weight": 29.88,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "BeO": {
+        "molecular_weight": 25.01,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "B2O3": {
+        "molecular_weight": 69.62,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "CO2": {
+        "molecular_weight": 44.01,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "CO": {
+        "molecular_weight": 28.01,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "NO2": {
+        "molecular_weight": 46.0055,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "N2O": {
+        "molecular_weight": 44.0128,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "NO": {
+        "molecular_weight": 30.006,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "O3": {
+        "molecular_weight": 48.0,
+        "non_oxygen_atoms": 0,
+        "oxygens": 3,
+        "element_valence": 0,
+        "oxygen_valence": -2
+    },
+    "F2O": {
+        "molecular_weight": 38.0,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "Na2O": {
+        "molecular_weight": 61.98,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "MgO": {
+        "molecular_weight": 40.305,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Al2O3": {
+        "molecular_weight": 101.961,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "SiO2": {
+        "molecular_weight": 60.08,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "P4O10": {
+        "molecular_weight": 283.88,
+        "non_oxygen_atoms": 4,
+        "oxygens": 10,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "P2O5": {
+        "molecular_weight": 141.94,
+        "non_oxygen_atoms": 2,
+        "oxygens": 5,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "SO2": {
+        "molecular_weight": 64.06,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "SO3": {
+        "molecular_weight": 80.06,
+        "non_oxygen_atoms": 1,
+        "oxygens": 3,
+        "element_valence": 6,
+        "oxygen_valence": -2
+    },
+    "Cl2O": {
+        "molecular_weight": 86.91,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "Cl2O7": {
+        "molecular_weight": 174.9,
+        "non_oxygen_atoms": 2,
+        "oxygens": 7,
+        "element_valence": 7,
+        "oxygen_valence": -2
+    },
+    "K2O": {
+        "molecular_weight": 94.2,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "CaO": {
+        "molecular_weight": 56.08,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Sc2O3": {
+        "molecular_weight": 137.93,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "TiO2": {
+        "molecular_weight": 79.865,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "VO2": {
+        "molecular_weight": 81.878,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "V2O5": {
+        "molecular_weight": 181.88,
+        "non_oxygen_atoms": 2,
+        "oxygens": 5,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "CrO3": {
+        "molecular_weight": 100.0,
+        "non_oxygen_atoms": 1,
+        "oxygens": 3,
+        "element_valence": 6,
+        "oxygen_valence": -2
+    },
+    "Cr2O3": {
+        "molecular_weight": 152.0,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "MnO2": {
+        "molecular_weight": 86.94,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Mn2O3": {
+        "molecular_weight": 157.88,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "FeO": {
+        "molecular_weight": 71.844,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Fe2O3": {
+        "molecular_weight": 159.69,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "CoO": {
+        "molecular_weight": 74.93,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Co3O4": {
+        "molecular_weight": 240.8,
+        "non_oxygen_atoms": 3,
+        "oxygens": 4,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "NiO": {
+        "molecular_weight": 74.69,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "CuO": {
+        "molecular_weight": 79.545,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Cu2O": {
+        "molecular_weight": 143.09,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "ZnO": {
+        "molecular_weight": 81.38,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Ga2O3": {
+        "molecular_weight": 187.44,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "GeO2": {
+        "molecular_weight": 72.63,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "As2O3": {
+        "molecular_weight": 197.84,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "As2O5": {
+        "molecular_weight": 290.87,
+        "non_oxygen_atoms": 2,
+        "oxygens": 5,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "SeO2": {
+        "molecular_weight": 78.96,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Br2O": {
+        "molecular_weight": 159.8,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "BrO3": {
+        "molecular_weight": 127.9,
+        "non_oxygen_atoms": 1,
+        "oxygens": 3,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "Rb2O": {
+        "molecular_weight": 121.44,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "SrO": {
+        "molecular_weight": 103.62,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Y2O3": {
+        "molecular_weight": 225.81,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "ZrO2": {
+        "molecular_weight": 123.22,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Nb2O5": {
+        "molecular_weight": 265.81,
+        "non_oxygen_atoms": 2,
+        "oxygens": 5,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "MoO3": {
+        "molecular_weight": 160.0,
+        "non_oxygen_atoms": 1,
+        "oxygens": 3,
+        "element_valence": 6,
+        "oxygen_valence": -2
+    },
+    "TcO2": {
+        "molecular_weight": 155.87,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 6,
+        "oxygen_valence": -2
+    },
+    "RuO2": {
+        "molecular_weight": 123.91,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Rh2O3": {
+        "molecular_weight": 222.41,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "PdO": {
+        "molecular_weight": 123.88,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Ag2O": {
+        "molecular_weight": 231.74,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "CdO": {
+        "molecular_weight": 128.41,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "In2O3": {
+        "molecular_weight": 277.63,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "SnO": {
+        "molecular_weight": 134.71,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "SnO2": {
+        "molecular_weight": 150.69,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Sb2O3": {
+        "molecular_weight": 291.48,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Sb2O5": {
+        "molecular_weight": 367.35,
+        "non_oxygen_atoms": 2,
+        "oxygens": 5,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "TeO2": {
+        "molecular_weight": 159.6,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "I2O5": {
+        "molecular_weight": 283.81,
+        "non_oxygen_atoms": 2,
+        "oxygens": 5,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "XeO3": {
+        "molecular_weight": 197.23,
+        "non_oxygen_atoms": 1,
+        "oxygens": 3,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "XeO4": {
+        "molecular_weight": 219.89,
+        "non_oxygen_atoms": 1,
+        "oxygens": 4,
+        "element_valence": 6,
+        "oxygen_valence": -2
+    },
+    "Cs2O": {
+        "molecular_weight": 157.88,
+        "non_oxygen_atoms": 2,
+        "oxygens": 1,
+        "element_valence": 1,
+        "oxygen_valence": -2
+    },
+    "BaO": {
+        "molecular_weight": 153.33,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "La2O3": {
+        "molecular_weight": 325.81,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "CeO2": {
+        "molecular_weight": 172.12,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Pr2O3": {
+        "molecular_weight": 290.74,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Nd2O3": {
+        "molecular_weight": 304.23,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "PmO2": {
+        "molecular_weight": 287.36,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Sm2O3": {
+        "molecular_weight": 348.42,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Eu2O3": {
+        "molecular_weight": 348.27,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Gd2O3": {
+        "molecular_weight": 362.5,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Tb2O3": {
+        "molecular_weight": 376.61,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Dy2O3": {
+        "molecular_weight": 354.74,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Ho2O3": {
+        "molecular_weight": 365.89,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Er2O3": {
+        "molecular_weight": 398.5,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Tm2O3": {
+        "molecular_weight": 397.99,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Yb2O3": {
+        "molecular_weight": 426.22,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "Lu2O3": {
+        "molecular_weight": 424.22,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "HfO2": {
+        "molecular_weight": 210.49,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Ta2O5": {
+        "molecular_weight": 441.94,
+        "non_oxygen_atoms": 2,
+        "oxygens": 5,
+        "element_valence": 5,
+        "oxygen_valence": -2
+    },
+    "WO3": {
+        "molecular_weight": 231.84,
+        "non_oxygen_atoms": 1,
+        "oxygens": 3,
+        "element_valence": 6,
+        "oxygen_valence": -2
+    },
+    "ReO3": {
+        "molecular_weight": 221.0,
+        "non_oxygen_atoms": 1,
+        "oxygens": 3,
+        "element_valence": 6,
+        "oxygen_valence": -2
+    },
+    "OsO4": {
+        "molecular_weight": 254.23,
+        "non_oxygen_atoms": 1,
+        "oxygens": 4,
+        "element_valence": 8,
+        "oxygen_valence": -2
+    },
+    "IrO4": {
+        "molecular_weight": 241.75,
+        "non_oxygen_atoms": 1,
+        "oxygens": 4,
+        "element_valence": 8,
+        "oxygen_valence": -2
+    },
+    "PtO2": {
+        "molecular_weight": 227.11,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Au2O3": {
+        "molecular_weight": 303.81,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "HgO": {
+        "molecular_weight": 216.59,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "Tl2O3": {
+        "molecular_weight": 441.88,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "PbO": {
+        "molecular_weight": 223.2,
+        "non_oxygen_atoms": 1,
+        "oxygens": 1,
+        "element_valence": 2,
+        "oxygen_valence": -2
+    },
+    "PbO2": {
+        "molecular_weight": 241.2,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "Bi2O3": {
+        "molecular_weight": 465.98,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    },
+    "PoO2": {
+        "molecular_weight": 239.0,
+        "non_oxygen_atoms": 1,
+        "oxygens": 2,
+        "element_valence": 4,
+        "oxygen_valence": -2
+    },
+    "At2O3": {
+        "molecular_weight": 397.92,
+        "non_oxygen_atoms": 2,
+        "oxygens": 3,
+        "element_valence": 3,
+        "oxygen_valence": -2
+    }
+}

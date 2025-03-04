@@ -1,43 +1,59 @@
-
-
-import tkinter
-from tkinter import ttk
-from tkinter import filedialog
-
+import tkinter as tk
+import json
 import sv_ttk
 
-def get_file_path():
-    global file_path
-    # Open and return file path
-    file_path= filedialog.askopenfilename(title = "Select A File", filetypes = (("text files", "*.DAT"), ("Excel spreadsheet", "*.xlsx")))
-    root.destroy()
-welcome = """
+# Read JSON data from a file
+with open('minerals.json', 'r') as f:
+    minerals_data = json.load(f)  # This loads the content of the file directly
 
-Welcome to epMin
-"""
-message = """
-epMin calculates mineral formulae and site activities from EPMA analyses.
+def on_select():
+    print(f"Selected: {selected_value.get()}")
 
-Please be aware that this script is designed for the output file obtained with CalcImage (J. Donovan) when processing data. The input file for single-point analyses should be in .DAT or .xlsx format. The heading of the file should contain at least sample name as "SAMPLE" and the oxides as m/m%
+# Create the main window
+root = tk.Tk()
+root.title("Minerals Selection")
 
-Browse your file using the button below
-"""
-
-root = tkinter.Tk()
-root.title("Select a file") #Heading of the window
-root.geometry("600x350") #Window size
-info = ttk.Label(root, text=welcome, wraplength=500, font=("Arial",12, "bold")).pack() #Label widget for the message with word wrapping
-label = ttk.Label(root, text=message, wraplength=500, font=("Arial",12)).pack() #Label widget for the message with word wrapping
-button = ttk.Button(root, text="Browse",command = get_file_path).pack()
-
-# This is where the magic happens
+# Apply dark theme using sv_ttk
 sv_ttk.set_theme("dark")
 
+# Set a larger window size to fit the content better
+root.geometry("500x450")  # Increased window size
 
+# Add some styling (font and padding)
+root.config(bg="#2e2e2e")  # Dark background for the window
 
+# Create a Tkinter variable to hold the selected radio button value
+selected_value = tk.StringVar(value="Olivine")  # Set the default value to 'Olivine' so it appears selected
+
+# Create a frame to hold the radio buttons for better performance and layout
+frame = tk.Frame(root, bg="#2e2e2e")  # Dark frame background
+frame.pack(pady=20, padx=20, fill="both", expand=True)
+
+# Add the instruction message above the radio buttons
+instruction_label = tk.Label(frame, text="Please select a mineral from the list below:", font=("Arial", 14), fg="#ffffff", bg="#2e2e2e")
+instruction_label.grid(row=0, column=0, columnspan=2, pady=10)
+
+# Create two columns of radio buttons
+columns = 2  # Set the number of columns
+row = 1  # Start the radio buttons below the instruction label
+column = 0
+
+# Loop to create radio buttons in two columns for minerals from the JSON file
+for index, mineral in enumerate(minerals_data.keys()):
+    radio_button = tk.Radiobutton(frame, text=mineral, value=mineral, variable=selected_value, command=on_select, font=("Arial", 12), fg="#ffffff", bg="#2e2e2e", selectcolor="#4a4a4a")
+    
+    # Place the radio buttons in two columns
+    radio_button.grid(row=row, column=column, sticky="w", pady=5, padx=10)
+    
+    # Update the row and column positions for the next radio button
+    column += 1
+    if column == columns:
+        column = 0
+        row += 1
+
+# Add the "Multiple" option as an additional radio button
+multiple_radio_button = tk.Radiobutton(frame, text="Multiple", value="Multiple", variable=selected_value, command=on_select, font=("Arial", 12), fg="#ffffff", bg="#2e2e2e", selectcolor="#4a4a4a")
+multiple_radio_button.grid(row=row, column=column, sticky="w", pady=5, padx=10)
+
+# Run the application
 root.mainloop()
-
-print(file_path)
-
-
-
