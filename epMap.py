@@ -34,20 +34,8 @@ Please bear in mind that the file should follow the output format from Probe Ima
 
 """
 
-InstructionWindow = FileSelector(welcome_message, instructions_message,1) #creates window and gives the option to browse a file
+InstructionWindow = FileSelector(welcome_message, instructions_message) #creates window and gives the option to browse a file
 file_path, file_type = InstructionWindow.get_file_path_and_type() #obtains the file type and path from the browse window
-
-###########################################################################################################################################################
-# check if file is valid and load the data
-###########################################################################################################################################################
-if file_type == "Unsupported file type.":
-    print("The selected file is not supported.")
-else:
-    print(f"File selected: {file_path}")
-    print(f"File type: {file_type}")
-
-    # Load data using the appropriate class for the file type
-    data = load_data(file_path, file_type)
 
 
 ###########################################################################################################################################################
@@ -56,8 +44,6 @@ else:
 attempts = 3  #Number of attempts allowed to input file's path
 
 for attempt in range(attempts):
-    file_path = input('Please type the path where the data file is located:   ') #Message to get input from user
-    #changing name of the file
     extraname = r'_FirstPass_\d{5}__Oxide_Image_Classify' #Part of the file name
     new_file_name = re.sub(extraname, '', os.path.basename(file_path)) #simplifies the file name by removing the previous part
     directory = os.path.dirname(file_path) #directory of the input excluding the name

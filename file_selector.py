@@ -89,7 +89,7 @@ class FileSelector:
     def _create_window(self): #private method to design the window
         root = tk.Tk() # Create a Tkinter window
         root.title("Select a file") # Set window title
-        root.geometry("600x350") # Set window size
+        root.geometry("600x450") # Set window size
         ttk.Label(root, text=self.titlew, wraplength=500, font=("Arial", 12, "bold")).pack() # Display title
         ttk.Label(root, text=self.message, wraplength=500, font=("Arial", 12)).pack() # Display message
         button = ttk.Button(root, text="Browse", command=lambda: self._open_file_dialog(root)) # Browse button
