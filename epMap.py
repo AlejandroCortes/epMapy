@@ -11,27 +11,44 @@ from functionsepmapy import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, 
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
 import scipy.ndimage
 import os
+from file_selector import FileSelector, load_data
+
 
 ###########################################################################################################################################################
-# Important information for User
+#  Intro messages
 ###########################################################################################################################################################
-Introd = """
-epMapy allows plotting EPMA quantitative maps and performing calculations with the data within, 
-as well as treatment of single-point data acquired with the microprobe.
+welcome_message = """
+Welcome to epMap"""
+instructions_message = """
+This script reads a .DAT (txt tab separated format) or .xlsx file that contains major and minor element contents of minerals or glass in a map.
 
-Please be aware that this script is designed for the output file obtained with CalcImage (J. Donovan) when processing maps.
 
-The input file for maps and single-point analyses should be in .DAT format 
+Please bear in mind that the file should follow the output format from Probe Image:
 
-Regarding maps, the heading of the file should contain at least the following column names (character sensitive): X, Y, NX, NY, NXY, and oxide data 
+1) Each pixel needs to be shown as rows
+2) the heading of the file should contain at least the following column names (character sensitive): X, Y, NX, NY, NXY, and oxide data
 
 -X and Y: x-y coordinates EPMA position, NX and NY: pixel number in x-y (matrix)
 -NXY: consecutive pixel number, all the rest values are weight percents including the total.
 -Oxide data should be reported in WT% (e.g. SiO2 WT%, TiO2 WT%, Al2O3 WT%, MgO WT%
 
-Regarding single-points analyses, the heading of the file should contain at least sample name and the oxides"""
+"""
 
-show_intro(Introd)
+InstructionWindow = FileSelector(welcome_message, instructions_message,1) #creates window and gives the option to browse a file
+file_path, file_type = InstructionWindow.get_file_path_and_type() #obtains the file type and path from the browse window
+
+###########################################################################################################################################################
+# check if file is valid and load the data
+###########################################################################################################################################################
+if file_type == "Unsupported file type.":
+    print("The selected file is not supported.")
+else:
+    print(f"File selected: {file_path}")
+    print(f"File type: {file_type}")
+
+    # Load data using the appropriate class for the file type
+    data = load_data(file_path, file_type)
+
 
 ###########################################################################################################################################################
 # Loading EPMA data

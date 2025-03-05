@@ -1,19 +1,19 @@
 # epMapy
 
-This repository provides tools for plotting EPMA quantitative maps and performing calculations on the data. It is specifically designed for processing output files obtained from CalcImage (J. Donovan).
+`epMapy` allows plotting EPMA quantitative maps and performing calculations with the data within with `epMap`, 
+as well as treatment of single-point data acquired with the microprobe with `epMin`.
 
-The input file for this script must be in `.xlsx` format. Therefore, if your data is in `.DAT` format, you will need to convert it to `.xlsx` before using this script.
+Please be aware that this script is designed for the output file obtained with CalcImage (J. Donovan) when processing data.
 
-If you are using software other than CalcImage to generate the maps, please ensure that the file's header contains at least the following column names (case-sensitive):
+The input file for maps and single-point analyses should be in .DAT or xlsx format 
 
-X, Y: EPMA position coordinates (x-y).
-NX, NY: Pixel number in the x and y directions (matrix dimensions).
-NXY: Consecutive pixel number.
-- The remaining columns contain weight percentages, including the Total column.
+Regarding maps, the heading of the file should contain at least the following column names (character sensitive): X, Y, NX, NY, NXY, and oxide data 
 
-Example columns in the file:
+-X and Y: x-y coordinates EPMA position, NX and NY: pixel number in x-y (matrix)
+-NXY: consecutive pixel number, all the rest values are weight percents including the total.
+-Oxide data should be reported in WT% (e.g. SiO2 WT%, TiO2 WT%, Al2O3 WT%, MgO WT%
 
-`X, Y, NX, NY, NXY, SiO2 WT%, TiO2 WT%, Al2O3 WT%, FeO WT%, MnO WT%, MgO WT%, CaO WT%, Na2O WT%, K2O WT%, P2O5 WT%, Total`
+Regarding single-points analyses, the heading of the file should contain at least sample name and the oxides
 
 ## Getting Started
 
