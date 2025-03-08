@@ -43,7 +43,7 @@ class DatFileReaderMap(FileReader):
         directory = os.path.dirname(self.file_path)  # Directory of the input excluding the name
         new_file_path = os.path.join(directory, new_file_name)  # New path using the new name
         os.rename(self.file_path, new_file_path)  # Rename the original file
-        print(f"File renamed to: {new_file_path}")
+        print(f"File renamed to: {new_file_name}")
         with open(new_file_path, 'r') as file: #Fix the contents of the file
             lines = file.readlines()
         lines[1] = lines[1].replace('\t\t', '\t') # Correct the second line if there are two tab characters
