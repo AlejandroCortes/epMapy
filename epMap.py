@@ -4,11 +4,11 @@
 import numpy as np  #do maths on multidimensional array objects
 import pandas as pd  #to read data sets
 import re  #to compare a set of string-type attributes
-import time  #to handle time-related calculations
 import matplotlib.pyplot as plt #default plotting library
 # importing external functions from functionsmapping.py
 from functionsepmapy import to_anhydrous, to_mol, to_cat, norm_calc, add_fe2o3, clean_data, extract_profile, show_intro  
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
+import time
 import scipy.ndimage
 import os
 from file_selector import FileSelector, load_data
@@ -18,20 +18,9 @@ from file_selector import FileSelector, load_data
 #  Intro messages
 ###########################################################################################################################################################
 welcome_message = """
-Welcome to epMap"""
+Input file with major and minor element composition"""
 instructions_message = """
-This script reads a .DAT (txt tab separated format) or .xlsx file that contains major and minor element contents of minerals or glass in a map.
-
-
-Please bear in mind that the file should follow the output format from Probe Image:
-
-1) Each pixel needs to be shown as rows
-2) the heading of the file should contain at least the following column names (character sensitive): X, Y, NX, NY, NXY, and oxide data
-
--X and Y: x-y coordinates EPMA position, NX and NY: pixel number in x-y (matrix)
--NXY: consecutive pixel number, all the rest values are weight percents including the total.
--Oxide data should be reported in WT% (e.g. SiO2 WT%, TiO2 WT%, Al2O3 WT%, MgO WT%
-
+text (tab-separated) or xlsx file with mapping grid
 """
 
 InstructionWindow = FileSelector(welcome_message, instructions_message) #creates window and gives the option to browse a file
@@ -210,7 +199,9 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
 # Plotting and profile extraction loop
 ###########################################################################################################################################################
 # Main loop for plotting and profile extraction
-sample_name = input("Enter the sample name: ").strip()
+extraname = r'.DAT' #Part of the file name
+new_file_name = re.sub(extraname, '', os.path.basename(file_path))
+sample_name = new_file_name.strip()
 pixel_size = (coord_data[coord_column_indices["X"], 1] - coord_data[coord_column_indices["X"], 0]) * 1000
 
 while True:
