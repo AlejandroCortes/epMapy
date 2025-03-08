@@ -11,8 +11,19 @@ from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the map
 import time
 import scipy.ndimage
 import os
-import json
-from file_selector import FileSelector, load_data, extract_elementsoxides
+from file_selector import FileSelector, load_data
+
+file_handlers = {
+    'single-point': {
+        '.DAT': 'DatFileReader',      # .DAT file for single-point data
+        '.xlsx': 'XlsxFileReader'    # .xlsx file for single-point data
+    },
+    'map': {
+        '.DAT': 'DatFileReaderMap',   # .DAT file for map data
+        '.xlsx': 'XlsxFileReaderMap'  # .xlsx file for map data
+    }
+}
+print(file_handlers['map']['.DAT'])
 
 
 ###########################################################################################################################################################
@@ -26,72 +37,69 @@ text (tab-separated) or xlsx file with mapping grid
 
 InstructionWindow = FileSelector(welcome_message, instructions_message) #creates window and gives the option to browse a file
 file_path, file_type = InstructionWindow.get_file_path_and_type() #obtains the file type and path from the browse window
-
-
-###########################################################################################################################################################
-# Loading EPMA data
-###########################################################################################################################################################
 data_structure = 'map'
 data = load_data(file_path, file_type, data_structure)
+
+
 print("data file was read")
+###########################################################################################################################################################
+# Deciding how to proceed
+###########################################################################################################################################################
+#map_point = input('Do you want to process a map: (Yes/No)   ') #Message to get input from user
+#if map_point == 'yes':
+        #Asks user which oxide to use for selecting the profile points
+        #selected_oxide = input(f"Which oxide would you like to use for selecting the profile points? Choose from: {', '.join(selected_oxides)}: ").strip()
+
+        #if selected_oxide not in selected_oxides:
+            #print("Invalid oxide selection. Please select an oxide from the list.")
+            #continue
+        #extract_profile(oxide_grids,selected_oxides, pixel_size, selected_oxide, sample_name)
+
+
+###########################################################################################################################################################
+# Initialising and filling dictionaries for compositions and coordinates.
+###########################################################################################################################################################
+oxide_columns = {} 
+coord_columns = {}
+oxide_columns_original = {}
+
+
+#Iterate over column names for matching with potential oxides and coordinates
+for norm_col in data.columns:
+    if re.search(r"(SiO2|TiO2|Cr2O3|Al2O3|FeO|MnO|NiO|MgO|CaO|Na2O|K2O|P2O5|F|Cl|SO3|BaO|SrO|La2O3|Ce2O3|PbO|Total)", norm_col, re.IGNORECASE):
+        print(f"Matched oxide column: {norm_col}") #prints which oxides are in the file
+        oxide_columns[norm_col] = data[norm_col].values  #Fills in the values of each oxide in the dictionary
+        oxide_columns_original[norm_col] = data[norm_col].values  #clone dictionary to keep original column names for following steps
+    elif re.search(r"(X|Y|NX|NY)", norm_col, re.IGNORECASE):
+        print(f"Matched coordinate column: {norm_col}")
+        coord_columns[norm_col] = data[norm_col].values  #Fills in the values of each coordinate or pixel number in the dictionary
+
+#List of potential oxides measured with the microprobe
+expected_oxides = ["SiO2", "TiO2", "Cr2O3", "Al2O3", "FeO", "MnO", "NiO", "MgO", "CaO", 
+                   "Na2O", "K2O", "P2O5", "F", "Cl", "SO3", "BaO", "SrO", "La2O3", "Ce2O3", "PbO" "Total"]
+#Fills missing oxide columns with very small numbers to avoid dividing by zero or NAN.
+for oxide in expected_oxides:
+    if oxide not in oxide_columns:
+        print(f"{oxide} column not found. Filling with 0.00000000001 to avoid issues when doing calculations.")
+        oxide_columns[oxide] = np.full(len(data), 0.00000000001)  #Fills with 0.00000000001
+
+###########################################################################################################################################################
+# Extract column heads and convert dictionaries into numpy arrays
+###########################################################################################################################################################
+#The following dictionary also includes also those oxides that were filled with 0.00000000001 for calculation purposes
+oxide_column_indices = {col: index for index, col in enumerate(oxide_columns.keys())}
+#The following clone dictiornary doesnt contain the oxides that were filled with 0.000000000001 values
+oxide_column_indices_original = {col: index for index, col in enumerate(oxide_columns_original.keys())}
+#coordinates and pixel number dictiornary
+coord_column_indices = {col: index for index, col in enumerate(coord_columns.keys())}
+#numpy arrays
+oxide_data = np.array([oxide_columns[key] for key in oxide_columns])
+coord_data = np.array([coord_columns[key] for key in coord_columns])
 
 ###########################################################################################################################################################
 #Structuring data so that it can be plotted
 ###########################################################################################################################################################
-def create_oxide_grids(data):
-    
-    oxide_grids = {} #Creates a grid for each oxide based on NX, NY coordinates
-
-    NX_max = max(value['NX'] for value in data.values()) # Find the maximum NX to determine grid size
-    NY_max = max(value['NY'] for value in data.values()) # Find the maximum NY to determine grid size
-
-    for key, value in data.items(): # Initialize the grid for each oxide present in the data
-        oxides_data = extract_elementsoxides(value) # Extract oxides for each row using the existing function
-
-        # For each oxide present in the row, create an entry in the grid if not already present
-        for oxide, oxide_value in oxides_data.items():
-            if oxide not in oxide_grids:
-                oxide_grids[oxide] = {}
-
-            # Get the NX, NY coordinates
-            NX = value['NX']
-            NY = value['NY']
-
-            # Initialize the grid (NX, NY) for the oxide if it doesn't exist
-            if (NX, NY) not in oxide_grids[oxide]:
-                oxide_grids[oxide][(NX, NY)] = None  # Set to None initially
-
-            # Populate the grid with the actual oxide value
-            oxide_grids[oxide][(NX, NY)] = oxide_value
-
-    return oxide_grids
-
-oxide_grids = create_oxide_grids(data)
-
-def convert_oxide_grids_for_json(oxide_grids):
-    new_oxide_grids = {}
-    
-    for oxide, grid in oxide_grids.items():
-        new_grid = {}
-        
-        for coordinate, value in grid.items():
-            # Convert (NX, NY) tuple to a string, and the value (oxide_value) stays as is
-            coordinate_str = f"{coordinate[0]}_{coordinate[1]}"  # Convert (NX, NY) to 'NX_NY'
-            new_grid[coordinate_str] = value  # Just save the oxide value as it is (assumed to be numeric)
-        
-        new_oxide_grids[oxide] = new_grid
-
-    return new_oxide_grids
-
-oxide_grids_str_keys = convert_oxide_grids_for_json(oxide_grids)
-
-# Now save this new oxide_grids to JSON
-new_file_name = re.sub(file_type, '', os.path.basename(file_path))
-sample_name = new_file_name.strip()
-with open(sample_name+'oxide_grids.json', 'w') as f:
-    json.dump(oxide_grids_str_keys, f, indent=4)
-
-print("Oxide grids saved to JSON file.")
+c, d = int(max(coord_data[coord_column_indices["NX"]])), int(max(coord_data[coord_column_indices["NY"]])) #Grid size matches the maximum NX and NY values
 
 # Initialize arrays for various properties
 # molar indexes: NK_A:Na2O+K2O/Al2O3, NKC_A:Na2O+K2O+CaO/Al2O3, K_Na:K2O/Na2O, M_f:
@@ -171,7 +179,8 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
 # Plotting and profile extraction loop
 ###########################################################################################################################################################
 # Main loop for plotting and profile extraction
-
+new_file_name = re.sub(file_type, '', os.path.basename(file_path))
+sample_name = new_file_name.strip()
 pixel_size = (coord_data[coord_column_indices["X"], 1] - coord_data[coord_column_indices["X"], 0]) * 1000
 
 while True:

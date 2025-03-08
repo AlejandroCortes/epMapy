@@ -7,6 +7,8 @@ import sv_ttk #to make the window dark theme
 import pandas as pd # to handle data coming as excel file
 import csv #to handle data coming as a text file
 import json
+import os
+import re
 
 ###########################################################################################################################################################
 # to read files and set variables
@@ -32,6 +34,43 @@ class DatFileReader(FileReader):
                 self.data[sample_name] = extract_elementsoxides(row) # calls the function to only get compositional information
                 self.data[sample_name]['TOTAL'] = float(row['TOTAL'])
 ###########################################################################################################################################################
+# subclass that will override the way the file is read (if tab-separated)
+###########################################################################################################################################################
+class DatFileReaderMap(FileReader):  
+    def read(self):  # public method to read .DAT file
+        extraname = r'_FirstPass_\d{5}__Oxide_Image_Classify'  # Part of the file name to remove
+        new_file_name = re.sub(extraname, '', os.path.basename(self.file_path))  # Simplify the file name
+        directory = os.path.dirname(self.file_path)  # Directory of the input excluding the name
+        new_file_path = os.path.join(directory, new_file_name)  # New path using the new name
+        os.rename(self.file_path, new_file_path)  # Rename the original file
+        print(f"File renamed to: {new_file_path}")
+        with open(new_file_path, 'r') as file: #Fix the contents of the file
+            lines = file.readlines()
+        lines[1] = lines[1].replace('\t\t', '\t') # Correct the second line if there are two tab characters
+        with open(new_file_path, 'w') as corrected_file:
+            corrected_file.writelines(lines)
+        with open(new_file_path, newline='') as f: # Now read the corrected file
+            lines = f.readlines()
+            header = lines[1].strip().split('\t')  # Use the second row as the header
+            header = [col.replace('"', '').replace(" WT%", "").replace("wt%", "").strip() for col in header]
+            data_lines = lines[2:]
+            reader = csv.DictReader(data_lines, fieldnames=header, delimiter='\t')  # Read as dictionary using tab as delimiter
+            for row in reader:  # Read line by line
+                cleaned_row = {key.replace('"', '').strip(): value for key, value in row.items()}
+                if 'X' in cleaned_row:
+                    cleaned_row['X_coord'] = float(cleaned_row.pop('X'))
+                if 'Y' in cleaned_row:
+                    cleaned_row['Y_coord'] = float(cleaned_row.pop('Y'))
+
+                NXY = cleaned_row['NXY']  # "NXY" is the column name for sample names
+                self.data[NXY] = extract_elementsoxides(cleaned_row)  # Calls the function to only get compositional information
+                self.data[NXY]['X_coord'] = float(cleaned_row['X_coord'])
+                self.data[NXY]['Y_coord'] = float(cleaned_row['Y_coord'])
+                self.data[NXY]['NX'] = int(cleaned_row['NX'])
+                self.data[NXY]['NY'] = int(cleaned_row['NY'])
+                self.data[NXY]['Total'] = float(cleaned_row['Total'])
+
+###########################################################################################################################################################
 # subclass that will override the way the file is read (Excel)
 ###########################################################################################################################################################
 class XlsxFileReader(FileReader):
@@ -41,6 +80,21 @@ class XlsxFileReader(FileReader):
             sample_name = row['SAMPLE']  # Assuming "SAMPLE" is the column name for sample names
             self.data[sample_name] = extract_elementsoxides(row) # calls the function to only get compositional information
             self.data[sample_name]['TOTAL'] = float(row['TOTAL'])
+
+###########################################################################################################################################################
+# subclass that will override the way the file is read (Excel)
+###########################################################################################################################################################
+class XlsxFileReaderMap(FileReader):
+    def read(self): # public method to read
+        df = pd.read_excel(self.file_path) #opens the file using the path selected
+        for _, row in df.iterrows(): #reads line by line
+            NXY = row['NXY']  # "SAMPLE" is the column name for sample names
+            self.data[NXY] = extract_elementsoxides(row) # calls the function to only get compositional information
+            self.data[NXY]['X'] = float(row['X'])
+            self.data[NXY]['Y'] = float(row['Y'])
+            self.data[NXY]['NX'] = int(row['NX'])
+            self.data[NXY]['NY'] = int(row['NY'])
+
 ###########################################################################################################################################################
 # main fuctions to load json files, to identify compositional columns in the data and to load the data
 ###########################################################################################################################################################
@@ -55,7 +109,7 @@ elements_weights, oxides_weights = load_json()
 
 def extract_elementsoxides(row):
         filtered_data = {} # empty dictionary
-        for key in row.index: #loop over the columns in the data
+        for key in row.keys(): #loop over the columns in the data
             if key in elements_weights or key in oxides_weights: #compares columns to the dictionaries containing possible oxides or elements
                 try:
                     filtered_data[key] = float(row[key])  # Convert to float
@@ -64,13 +118,20 @@ def extract_elementsoxides(row):
         return filtered_data
 
 file_handlers = {
-    '.DAT': DatFileReader,
-    '.xlsx': XlsxFileReader
+    'single-point': {
+        '.DAT': DatFileReader,      # .DAT file for single-point data
+        '.xlsx': XlsxFileReader    # .xlsx file for single-point data
+    },
+    'map': {
+        '.DAT': DatFileReaderMap,   # .DAT file for map data
+        '.xlsx': XlsxFileReaderMap  # .xlsx file for map data
+    }
 }
 
-def load_data(file_path, file_type): #fuction to load the data by selecting the appropriate method depending on file format
+
+def load_data(file_path, file_type, data_structure): #fuction to load the data by selecting the appropriate method depending on file format
     try:
-        reader_class = file_handlers[file_type] #finds the type of reading according to the type
+        reader_class = file_handlers[data_structure][file_type] #finds the type of reading according to the type
         reader = reader_class(file_path)
         reader.read()  # Read the data using the appropriate reader
         return reader.get_data() # gets data into dictionaries

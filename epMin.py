@@ -8,21 +8,14 @@ import json
 #  Intro messages
 ###########################################################################################################################################################
 welcome_message = """
-Welcome to epMin"""
+Input file with major and minor element composition"""
 instructions_message = """
-
-This script reads a .DAT or .xlsx file that contains major and minor element contents of mineral phases.
-
-
-Please bear in mind that the file should follow the output format from Probe Software:
-
-1) Analyses need to be shown as rows
-2) The heading of the file should have Sample id as "SAMPLE" and the element/oxides should not contain more than the chemical symbol 
-
+text (tab-separated) or xlsx file with single-points
 """
 InstructionWindow = FileSelector(welcome_message, instructions_message) #creates window and gives the option to browse a file
 file_path, file_type = InstructionWindow.get_file_path_and_type() #obtains the file type and path from the browse window
-
+print(f"File selected: {file_path}")
+data_structure = 'single-point'
 ###########################################################################################################################################################
 # check if file is valid and load the data
 ###########################################################################################################################################################
@@ -33,7 +26,7 @@ else:
     print(f"File type: {file_type}")
 
     # Load data using the appropriate class for the file type
-    data = load_data(file_path, file_type)
+    data = load_data(file_path, file_type, data_structure)
 
 ###########################################################################################################################################################
 # main fuctions to load json files, to identify compositional columns in the data and to load the data
