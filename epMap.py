@@ -199,8 +199,7 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
 # Plotting and profile extraction loop
 ###########################################################################################################################################################
 # Main loop for plotting and profile extraction
-extraname = r'.DAT' #Part of the file name
-new_file_name = re.sub(extraname, '', os.path.basename(file_path))
+new_file_name = re.sub(file_type, '', os.path.basename(file_path))
 sample_name = new_file_name.strip()
 pixel_size = (coord_data[coord_column_indices["X"], 1] - coord_data[coord_column_indices["X"], 0]) * 1000
 
