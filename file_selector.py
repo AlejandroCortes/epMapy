@@ -104,7 +104,7 @@ class FileSelector:
         self.file_path = filedialog.askopenfilename(title="Select A File", filetypes=(("All files", "*.*"),))
         if self.file_path:
             self._validate_file_type() #calls the private method to check the file format
-        self.root.quit()  # close the window after file selection
+        self.root.destroy()  # close the window after file selection
     def _validate_file_type(self): #private method to check the type of the file that was loaded
         if self.file_path.endswith(".DAT"): #check if it is a text file
             self.file_type = ".DAT"
