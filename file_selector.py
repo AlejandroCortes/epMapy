@@ -36,6 +36,8 @@ class DatFileReader(FileReader):
 ###########################################################################################################################################################
 # subclass that will override the way the file is read (if tab-separated)
 ###########################################################################################################################################################
+
+
 class DatFileReaderMap(FileReader):  
     def read(self):  # public method to read .DAT file
         extraname = r'_FirstPass_\d{5}__Oxide_Image_Classify'  # Part of the file name to remove
@@ -44,31 +46,59 @@ class DatFileReaderMap(FileReader):
         new_file_path = os.path.join(directory, new_file_name)  # New path using the new name
         os.rename(self.file_path, new_file_path)  # Rename the original file
         print(f"File renamed to: {new_file_name}")
-        with open(new_file_path, 'r') as file: #Fix the contents of the file
+
+        # Fix the contents of the file (correcting tabs in line 2)
+        with open(new_file_path, 'r') as file:  # Read original file
             lines = file.readlines()
-        lines[1] = lines[1].replace('\t\t', '\t') # Correct the second line if there are two tab characters
+        lines[1] = lines[1].replace('\t\t', '\t')  # Correct the second line if there are two tab characters
         with open(new_file_path, 'w') as corrected_file:
             corrected_file.writelines(lines)
-        with open(new_file_path, newline='') as f: # Now read the corrected file
+
+        # Now read the corrected file
+        with open(new_file_path, newline='') as f:
             lines = f.readlines()
             header = lines[1].strip().split('\t')  # Use the second row as the header
             header = [col.replace('"', '').replace(" WT%", "").replace("wt%", "").strip() for col in header]
-            data_lines = lines[2:]
-            reader = csv.DictReader(data_lines, fieldnames=header, delimiter='\t')  # Read as dictionary using tab as delimiter
+
+            # Filter out any empty or malformed lines (removing lines with only whitespace or lines that end in carriage return '\r')
+            data_lines = [line.strip() for line in lines[2:] if line.strip() and not line.endswith('\r')]
+            print(f"Header: {header}")
+            print(f"First 5 data lines: {data_lines[:5]}")  # Debug: check the first few lines
+
+            # Initialize CSV reader
+            reader = csv.DictReader(data_lines, fieldnames=header, delimiter='\t')
+
             for row in reader:  # Read line by line
+                if row is None:  # If the row is None, skip it
+                    print(f"Skipping None row: {row}")
+                    continue
+
+                if not row:  # Skip empty or malformed rows
+                    print(f"Skipping empty row: {row}")
+                    continue
+
+                # Clean up the row data
                 cleaned_row = {key.replace('"', '').strip(): value for key, value in row.items()}
+
+                # Process 'X' and 'Y' coordinates if they exist
                 if 'X' in cleaned_row:
                     cleaned_row['X_coord'] = float(cleaned_row.pop('X'))
                 if 'Y' in cleaned_row:
                     cleaned_row['Y_coord'] = float(cleaned_row.pop('Y'))
 
+                # Extract 'NXY' value, which is used as the sample name or key
                 NXY = cleaned_row['NXY']  # "NXY" is the column name for sample names
-                self.data[NXY] = extract_elementsoxides(cleaned_row)  # Calls the function to only get compositional information
+
+                # Call the function to extract compositional information and store the data
+                self.data[NXY] = extract_elementsoxides(cleaned_row)
                 self.data[NXY]['X_coord'] = float(cleaned_row['X_coord'])
                 self.data[NXY]['Y_coord'] = float(cleaned_row['Y_coord'])
                 self.data[NXY]['NX'] = int(cleaned_row['NX'])
                 self.data[NXY]['NY'] = int(cleaned_row['NY'])
                 self.data[NXY]['Total'] = float(cleaned_row['Total'])
+        
+
+
 
 ###########################################################################################################################################################
 # subclass that will override the way the file is read (Excel)

@@ -25,35 +25,95 @@ def browse_win():
                                                          ))
     tk.label_file_explorer.configure(text="file Opened: "+filename)
 
-def clean_data(X, oxide_column_indices):
-    a = len(X[0, :])  # number of data points
-    b = len(X[:, 0])  # number of oxides + total
-    clean = np.copy(X)  # copies the input to avoid overwriting
-
-    # Accessing the FeO, CaO, and Total columns using the indices
-    feo_index = oxide_column_indices.get('FeO', None)
-    cao_index = oxide_column_indices.get('CaO', None)
-    total_index = oxide_column_indices.get('Total', None)
-
-    for i in range(a):
-        # Retrieve the values dynamically using column indices
-        if (clean[total_index,i] < 80) & ((clean[feo_index,i] < 40) | (clean[cao_index,i] < 50)):
-            clean[:, i] = clean[:, i] * 0  # flagging as a bad analysis or crackj
+def clean_data(oxide_grids, total_grids):
+    """
+    Cleans the oxide grids based on the values of FeO, CaO, and Total oxides.
     
-    return clean
+    Parameters:
+    oxide_grids (dict): Dictionary containing oxide grids with oxides and their values.
+    total_grids (dict): Dictionary containing 'Total' values for each (NX, NY) pair.
+    
+    Returns:
+    cleaned_grids (dict): Dictionary containing cleaned oxide grids with bad data set to 0.
+    """
+    cleaned_grids = {}  # Dictionary to hold cleaned oxide grids
+
+
+
+    # Iterate through each oxide in the oxide grids
+    for oxide, grid in oxide_grids.items():
+        clean_grid = {}  # To store cleaned data for this specific oxide
+        
+        # Iterate over the grid to clean the values based on Total, FeO, and CaO
+        for (NX, NY), data in grid.items():
+            
+            # Retrieve FeO and CaO values for the current (NX, NY)
+            feo_value = oxide_grids.get('FeO', {}).get((NX, NY), {}).get('oxide_value', 0) # Default to 0 if not found
+            cao_value = oxide_grids.get('CaO', {}).get((NX, NY), {}).get('oxide_value', 0)  # Default to 0 if not found
+            total_value = total_grids.get((NX, NY), 0)  # Get Total value from total_grids for the same (NX, NY)
+            # Cleaning condition based on Total, FeO, and CaO
+            if total_value < 80 and (feo_value < 40 or cao_value < 50):
+                clean_grid[(NX, NY)] = {'oxide_value': 0, 'X_coord': data['X_coord'], 'Y_coord': data['Y_coord']}
+                total_grids[(NX, NY)] = 0
+            elif total_value > 105:
+                clean_grid[(NX, NY)] = {'oxide_value': 0, 'X_coord': data['X_coord'], 'Y_coord': data['Y_coord']}
+                total_grids[(NX, NY)] = 0
+            else:
+                clean_grid[(NX, NY)] = {'oxide_value': data['oxide_value'], 'X_coord': data['X_coord'], 'Y_coord': data['Y_coord']}
+        
+        # Store the cleaned grid for this oxide
+        cleaned_grids[oxide] = clean_grid
+    
+    return cleaned_grids, total_grids
+
 
 #This function takes major oxide compositions and normalise them to 100%
-def to_anhydrous(X, oxide_column_indices):
-    a   = len(X[0,:]) #num of data points
-    b   = len(X[:,0]) #num of oxides + total
-    anh = np.copy(X)  #copies the input to avoid overwriting
-    total_index = oxide_column_indices.get('Total', None)
+def to_anhydrous(oxide_grids, total_grids):
+    anhydrous_grids = {}
+    for oxide, grid in oxide_grids.items():
+        anhydrous_grid = {}
+        for (NX,NY), data in grid.items():
+            total_value = total_grids.get((NX,NY),0)
+            if total_value > 0 :
+                anhydrous_grid[(NX, NY)] = {'oxide_value': 100*data['oxide_value']/total_value, 'X_coord': data['X_coord'], 'Y_coord': data['Y_coord']}
+                total_grids[(NX, NY)] = 100
+            else:
+                anhydrous_grid[(NX, NY)] = {'oxide_value': 0, 'X_coord': data['X_coord'], 'Y_coord': data['Y_coord']}
+        anhydrous_grids[oxide] = anhydrous_grid
+    return anhydrous_grids, total_grids
 
-    for i in range (a):
-        for j in range (b):
-            if (anh[total_index,i] > 0):
-                anh[j,i] = anh[j,i]*100/anh[total_index,i] #normalising data to 100%
-    return anh
+def k_na(oxide_grids, total_grids):
+    k_na_grid = {}
+
+    # Directly access K2O and Na2O grids
+    k2o_grid = oxide_grids.get('K2O', {})
+    na2o_grid = oxide_grids.get('Na2O', {})
+
+    # Iterate through the (NX, NY) pairs in the K2O grid
+    for (NX, NY), data in k2o_grid.items():
+        # Retrieve the K2O and Na2O values for the current (NX, NY)
+        k2o_value = k2o_grid.get((NX, NY), {}).get('oxide_value', 0)
+        na2o_value = na2o_grid.get((NX, NY), {}).get('oxide_value', 0)
+        total_value = total_grids.get((NX, NY), 0)  # Get Total value from total_grids for the same (NX, NY)
+
+        # If total_value is greater than 0, calculate the k_na value
+        if total_value > 0:
+            k_na_grid[(NX, NY)] = {
+                'oxide_value': 1.119043665947202*k2o_value / na2o_value,
+                'X_coord': data['X_coord'],
+                'Y_coord': data['Y_coord']
+            }
+            print(f"Computed k_na for ({NX}, {NY}): ({k2o_value}, {na2o_value}) {k2o_value / na2o_value}")
+        else:
+            # If the total_value is not valid, set oxide_value to 0
+            k_na_grid[(NX, NY)] = {
+                'oxide_value': 0,
+                'X_coord': data['X_coord'],
+                'Y_coord': data['Y_coord']
+            }
+    
+    return k_na_grid
+
 
 #This function takes major oxide compositions in wt.% and converts them to mol
 def to_mol(X, oxide_column_indices):
@@ -381,106 +441,124 @@ def norm_calc(X, oxide_column_indices):
 #     print(f"Data saved to {excel_filename}")
 
 
-def extract_profile(grid, oxides, pixel_size, selected_oxide, sample_name, profile_index):
-    print("Select two points on the grid to define a traverse.")
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.ndimage
+
+# def extract_profile(grid, oxides, pixel_size, selected_oxide, sample_name, profile_index):
+#     print("Select two points on the grid to define a traverse.")
     
-    # Create a figure to display the grid with the selected oxide
-    plt.figure(figsize=(6, 6))
-    im = plt.imshow(grid[selected_oxide], cmap='viridis', vmin=0, vmax=np.max(grid[selected_oxide]))
-    plt.colorbar(im, label=f"{selected_oxide} wt.%")
-    plt.title(f"Select two points for {selected_oxide} profile")
-    plt.axis('off')  # Hide axes for cleaner view
+#     # Convert the dictionary of (NX, NY) pairs into a 2D numpy array for the selected oxide
+#     # Get the grid size based on the NX, NY coordinates
+#     oxides_data = grid[selected_oxide]
+#     max_x = max([coord[0] for coord in oxides_data.keys()])
+#     max_y = max([coord[1] for coord in oxides_data.keys()])
     
-    # Ensure the plot is rendered first before selecting points
-    plt.show(block=False)  # This allows interaction while the plot stays open
-    points = plt.ginput(2)  # Allow the user to select two points on the plot
+#     # Create a 2D array for the selected oxide, filled with NaN values initially
+#     oxide_array = np.full((max_x + 1, max_y + 1), np.nan)
     
-    if len(points) < 2:
-        print("Traverse selection canceled.")
-        return
+#     # Fill the array with the actual oxide values from the (NX, NY) pairs
+#     for (NX, NY), oxide_data in oxides_data.items():
+#     # Extract the oxide_value from the dictionary
+#         oxide_value = oxide_data.get('oxide_value', np.nan)  # Default to np.nan if not found
+#         oxide_array[NX, NY] = oxide_value
 
-    # Unpack the coordinates of the two points
-    (x1, y1), (x2, y2) = points
-    print(f"Selected points: ({x1:.2f}, {y1:.2f}) to ({x2:.2f}, {y2:.2f})")
-
-    # Ensure the distance between the two points is at least 1.5 times the pixel size
-    distance_pixels = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    min_distance = 1.5 * pixel_size  # Minimum distance between points
-    if distance_pixels < min_distance:
-        print(f"Error: The distance between points is too small. Please select a wider range (at least {min_distance} pixels).")
-        return
+#     # Plot the grid with the selected oxide using imshow()
+#     plt.figure(figsize=(6, 6))
+#     im = plt.imshow(oxide_array, cmap='viridis', vmin=0, vmax=np.nanmax(oxide_array))  # Handle NaN values
+#     plt.colorbar(im, label=f"{selected_oxide} wt.%")
+#     plt.title(f"Select two points for {selected_oxide} profile")
+#     plt.axis('off')  # Hide axes for cleaner view
     
-    # Create an array of x and y coordinates between the two points (traverse)
-    # Calculate the number of points based on the minimum distance
-    num_points = max(int(distance_pixels // min_distance), 2)  # Ensure at least 2 points
-    x_coords = np.linspace(x1, x2, num_points)
-    y_coords = np.linspace(y1, y2, num_points)
-
-    # Debugging: Print coordinates to make sure they're being generated correctly
-    print(f"x_coords: {x_coords}")
-    print(f"y_coords: {y_coords}")
-
-    # Map the coordinates onto the grid to get the profile values (using scipy's map_coordinates)
-    profiles = {}
-    for oxide in oxides:
-        profile_values = scipy.ndimage.map_coordinates(grid[oxide], [y_coords, x_coords], order=1)
-        profiles[oxide] = profile_values
-    # Debugging: Check if the profile values are being calculated
-    for oxide, profile_values in profiles.items():
-        print(f"Profile values for {oxide}: {profile_values}")
-
-    # Get the scaling factors for X and Y coordinates from coord_data
-    # Convert pixel distances to micrometers
-    distance_pixels = np.sqrt((x_coords - x1) ** 2 + (y_coords - y1) ** 2)
-    distance_microns = distance_pixels * pixel_size
+#     # Ensure the plot is rendered first before selecting points
+#     plt.show(block=False)  # This allows interaction while the plot stays open
+#     points = plt.ginput(2)  # Allow the user to select two points on the plot
     
-    # Debugging: Check the calculated micrometer distances
-    print(f"Distance in micrometers: {distance_microns}")
+#     if len(points) < 2:
+#         print("Traverse selection canceled.")
+#         return
 
-    # Plot the image with the selected line (profile)
-    fig, ax = plt.subplots(figsize=(6, 6))
-    im = ax.imshow(grid[selected_oxide], cmap='viridis', vmin=0, vmax=np.max(grid[selected_oxide]))
-    ax.plot([x1, x2], [y1, y2], color='red', linewidth=2, label="Profile Line")  # Draw the profile line
-    ax.arrow(x1,y1,x2-x1,y2-y1,width=1,facecolor='black',edgecolor='white',length_includes_head=True)
-    ax.set_title(f"{selected_oxide} with Profile Line")
-    ax.axis('off')
-    ax.legend()
+#     # Unpack the coordinates of the two points
+#     (x1, y1), (x2, y2) = points
+#     print(f"Selected points: ({x1:.2f}, {y1:.2f}) to ({x2:.2f}, {y2:.2f})")
 
-    # Save the image with the profile line
-    profile_image_filename = f"{sample_name}_profile_{profile_index}.png"
-    plt.savefig(profile_image_filename, dpi=300, transparent=True, bbox_inches='tight')
-    print(f"Profile image saved as {profile_image_filename}")
-    plt.close()  # Close the plot to avoid excessive memory usage
+#     # Ensure the distance between the two points is at least 1.5 times the pixel size
+#     distance_pixels = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+#     min_distance = 1.5 * pixel_size  # Minimum distance between points
+#     if distance_pixels < min_distance:
+#         print(f"Error: The distance between points is too small. Please select a wider range (at least {min_distance} pixels).")
+#         return
+    
+#     # Create an array of x and y coordinates between the two points (traverse)
+#     num_points = max(int(distance_pixels // min_distance), 2)  # Ensure at least 2 points
+#     x_coords = np.linspace(x1, x2, num_points)
+#     y_coords = np.linspace(y1, y2, num_points)
 
-    # Prepare profile data
-    data_dict = {'Distance (µm)': distance_microns}
-    for oxide, profile_values in profiles.items():
-        data_dict[f'{oxide} (wt.%)'] = profile_values
-    df = pd.DataFrame(data_dict)
+#     # Debugging: Print coordinates to make sure they're being generated correctly
+#     print(f"x_coords: {x_coords}")
+#     print(f"y_coords: {y_coords}")
 
-    # Define the Excel filename
-    excel_filename = f"{sample_name}_profiles_data.xlsx"
+#     # Map the coordinates onto the grid to get the profile values (using scipy's map_coordinates)
+#     profiles = {}
+#     for oxide in oxides:
+#         profile_values = scipy.ndimage.map_coordinates(oxide_array, [y_coords, x_coords], order=1)
+#         profiles[oxide] = profile_values
+#     # Debugging: Check if the profile values are being calculated
+#     for oxide, profile_values in profiles.items():
+#         print(f"Profile values for {oxide}: {profile_values}")
 
-    # Check if the file exists
-    if not os.path.exists(excel_filename):
-        # Create an empty file if it doesn't exist
-        with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
-            # Write an empty dataframe or just create the sheet to initialize the file
-            pd.DataFrame().to_excel(writer, index=False, sheet_name="Sheet1")
+#     # Get the scaling factors for X and Y coordinates from coord_data
+#     # Convert pixel distances to micrometers
+#     distance_pixels = np.sqrt((x_coords - x1) ** 2 + (y_coords - y1) ** 2)
+#     distance_microns = distance_pixels * pixel_size
+    
+#     # Debugging: Check the calculated micrometer distances
+#     print(f"Distance in micrometers: {distance_microns}")
 
-    # Create a new sheet name based on profile index
-    sheet_name = f"Profile_{profile_index}"
+#     # Plot the image with the selected line (profile)
+#     fig, ax = plt.subplots(figsize=(6, 6))
+#     im = ax.imshow(oxide_array, cmap='viridis', vmin=0, vmax=np.nanmax(oxide_array))
+#     ax.plot([x1, x2], [y1, y2], color='red', linewidth=2, label="Profile Line")  # Draw the profile line
+#     ax.arrow(x1,y1,x2-x1,y2-y1,width=1,facecolor='black',edgecolor='white',length_includes_head=True)
+#     ax.set_title(f"{selected_oxide} with Profile Line")
+#     ax.axis('off')
+#     ax.legend()
 
-    # Load the existing workbook to check if the sheet exists
-    book = load_workbook(excel_filename)
+#     # Save the image with the profile line
+#     profile_image_filename = f"{sample_name}_profile_{profile_index}.png"
+#     plt.savefig(profile_image_filename, dpi=300, transparent=True, bbox_inches='tight')
+#     print(f"Profile image saved as {profile_image_filename}")
+#     plt.close()  # Close the plot to avoid excessive memory usage
 
-    # If the sheet already exists, delete it
-    if sheet_name in book.sheetnames:
-        del book[sheet_name]
+#     # Prepare profile data
+#     data_dict = {'Distance (µm)': distance_microns}
+#     for oxide, profile_values in profiles.items():
+#         data_dict[f'{oxide} (wt.%)'] = profile_values
+#     df = pd.DataFrame(data_dict)
 
-    # Append data to the file (with the sheet being replaced if it exists)
-    with pd.ExcelWriter(excel_filename, engine='openpyxl', mode='a') as writer:
-        # Write the data to the specified sheet name
-        df.to_excel(writer, index=False, sheet_name=sheet_name)
+#     # Define the Excel filename
+#     excel_filename = f"{sample_name}_profiles_data.xlsx"
 
-    print(f"Data saved to {excel_filename} in sheet {sheet_name}")
+#     # Check if the file exists
+#     if not os.path.exists(excel_filename):
+#         # Create an empty file if it doesn't exist
+#         with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
+#             # Write an empty dataframe or just create the sheet to initialize the file
+#             pd.DataFrame().to_excel(writer, index=False, sheet_name="Sheet1")
+
+#     # Create a new sheet name based on profile index
+#     sheet_name = f"Profile_{profile_index}"
+
+#     # Load the existing workbook to check if the sheet exists
+#     book = load_workbook(excel_filename)
+
+#     # If the sheet already exists, delete it
+#     if sheet_name in book.sheetnames:
+#         del book[sheet_name]
+
+#     # Append data to the file (with the sheet being replaced if it exists)
+#     with pd.ExcelWriter(excel_filename, engine='openpyxl', mode='a') as writer:
+#         # Write the data to the specified sheet name
+#         df.to_excel(writer, index=False, sheet_name=sheet_name)
+
+#     print(f"Data saved to {excel_filename} in sheet {sheet_name}")

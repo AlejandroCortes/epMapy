@@ -181,7 +181,7 @@ for idx in range(len(coord_data[coord_column_indices["NXY"]])):
 # Main loop for plotting and profile extraction
 new_file_name = re.sub(file_type, '', os.path.basename(file_path))
 sample_name = new_file_name.strip()
-pixel_size = (coord_data[coord_column_indices["X"], 1] - coord_data[coord_column_indices["X"], 0]) * 1000
+pixel_size = (coord_data[coord_column_indices["X"], 1] - coord_data[coord_column_indices["X"], 0])
 
 while True:
     selected_oxides_input = input("Enter the oxides you want to plot, separated by commas, or type 'all' to plot all: ").strip()
