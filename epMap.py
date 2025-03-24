@@ -6,7 +6,7 @@ import pandas as pd  #to read data sets
 import re  #to compare a set of string-type attributes
 import matplotlib.pyplot as plt #default plotting library
 # importing external functions from functionsmapping.py
-from functionsepmapy import to_anhydrous, k_na, to_mol, to_cat, norm_calc, add_fe2o3, clean_data, show_intro  
+from functionsepmapy import to_anhydrous, k_na, to_mol, to_cat, norm_calc, add_fe2o3, clean_data, show_intro, load_json, m_f  
 from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the maps
 import scipy.ndimage
 import os # to access paths and modify file names
@@ -453,40 +453,90 @@ def plot_oxide_grids_interactive(oxide_grids, sample_name, pixel_size):
 # pixel_size = 0.5  # Example pixel size in micrometers
 #plot_oxide_grids_interactive(clean_grids, new_sample_name, pixel_size)
 
-def plot_k_na(grid):
-    nx_values = [key[0] for key in grid.keys()]
-    ny_values = [key[1] for key in grid.keys()]
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib_scalebar.scalebar import ScaleBar
+import re
 
-    nx_min, nx_max = min(nx_values), max(nx_values)
-    ny_min, ny_max = min(ny_values), max(ny_values)
+def plot_k_na_grid(k_na_grid, mf_grid, sample_name):
+    # Extract unique NX, NY coordinates
+    coordinates = list(k_na_grid.keys())
+    max_NX = max([coord[0] for coord in coordinates])
+    max_NY = max([coord[1] for coord in coordinates])
 
-    # Create a 2D array (matrix) to hold the grid values
-    grid_values = np.zeros((ny_max - ny_min + 1, nx_max - nx_min + 1))
+    # Create a matrix to hold the k_na values (with NaN for missing data)
+    k_na_matrix = np.full((max_NX + 1, max_NY + 1), np.nan)
+    mf_matrix = np.full((max_NX + 1, max_NY + 1), np.nan)
 
-    # Populate the array with the values from the dictionary
-    for (NX, NY), data in grid.items():
-        grid_values[NX,NY] = data['oxide_value']
+    # Populate the k_na matrix with the k_na values
+    for (NX, NY), data in k_na_grid.items():
+        k_na_matrix[NX, NY] = data['oxide_value']
+    for (NX, NY), data2 in mf_grid.items():
+        mf_matrix[NX, NY] = data2['oxide_value']
+    
 
-    # Create a plot
-    plt.figure(figsize=(6, 6))
-    plt.imshow(grid_values, cmap='viridis', vmin=0) 
+    # Calculate pixel size based on the X_coord and Y_coord of the first two data points
+    first_data = list(k_na_grid.values())[0]
+    x1, y1 = first_data['X_coord'], first_data['Y_coord']
+    x2, y2 = list(k_na_grid.values())[1]['X_coord'], list(k_na_grid.values())[1]['Y_coord']
 
-    # Add a colorbar to the plot
-    plt.colorbar(label='Grid Value')
+    pixel_size_x = abs(x2 - x1)  # Calculate pixel size based on X_coord
+    pixel_size_y = abs(y2 - y1)  # Calculate pixel size based on Y_coord
+    pixel_size = np.sqrt(pixel_size_x**2 + pixel_size_y**2) * 1000  # Overall pixel size in microns (assuming grid is square)
 
-    # Label the axes
-    plt.xlabel('NX')
-    plt.ylabel('NY')
+    # Create the plot
+    fig, axs = plt.subplots(1,2,figsize=(6, 3))
 
-    # Show the plot 
-    plt.title('Grid Values Heatmap')
+    ax = axs[0]
+
+    # Use imshow to display the k_na matrix with the 'viridis' colormap
+    im = ax.imshow(k_na_matrix, cmap='viridis', vmin=0, vmax=6)  # Set range from 0 to max k_na value
+    im.cmap.set_under('black')  # Set color for NaN values (black)
+    
+    # Add title and colorbar
+    ax.set_title("K/Na molar ratio")
+    ax.axis('off')  # Hide axes
+    fig.colorbar(im, ax=ax)
+    
+    # Add scale bar
+    scalebar = ScaleBar(pixel_size, "um", location="lower right")
+    ax.add_artist(scalebar)
+
+    ax = axs[1]
+
+    # Use imshow to display the k_na matrix with the 'viridis' colormap
+    im = ax.imshow(mf_matrix, cmap='viridis', vmin=1, vmax=2)  # Set range from 0 to max k_na value
+    im.cmap.set_under('black')  # Set color for NaN values (black)
+    
+    # Add title and colorbar
+    ax.set_title("M cation ratio")
+    ax.axis('off')  # Hide axes
+    fig.colorbar(im, ax=ax)
+    
+    # Add scale bar
+    scalebar = ScaleBar(pixel_size, "um", location="lower right")
+    ax.add_artist(scalebar)
+
+    # Save the plot as a PDF file
+    formatted_name = sample_name.replace('FirstPass', '').replace(r'\d{5}', '')  # Clean up the sample name
+    pdf_filename = f"{formatted_name}_KNa_Mf_grid_plot.pdf"
+    plt.savefig(pdf_filename, dpi=600, transparent=True, bbox_inches='tight')
+
+    # Show the plot
     plt.show()
 
-plot_k_na(anhydrous_grids['Na2O'])
-import itertools
-for (NX, NY), data in itertools.islice(k_na_grid.items(), 5):
-    print(f"({NX}, {NY}): {data}")
-for (NX, NY), data in itertools.islice(anhydrous_grids['K2O'].items(), 5):
-    print(f"({NX}, {NY}): {data}")
-for (NX, NY), data in itertools.islice(anhydrous_grids['Na2O'].items(), 5):
-    print(f"({NX}, {NY}): {data}")
+    print(f"Plot saved as {pdf_filename}")
+    return pixel_size, formatted_name
+
+
+
+
+elements_weights, oxides_weights = load_json()
+
+mol_grids, total_grids = to_mol(anhydrous_grids, total_grids, oxides_weights)
+
+cat_grids, total_grids = to_cat(mol_grids, total_grids, oxides_weights)
+
+mf_grid, total_grids = m_f(cat_grids, total_grids)
+
+plot_k_na_grid(k_na_grid, mf_grid, new_sample_name)

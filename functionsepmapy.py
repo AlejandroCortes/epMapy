@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 import os
 from openpyxl import load_workbook
+import json
 def show_intro(message):
     window = tk.Tk()  #Create the main window
     window.title("Please read this before continuing...") #Heading of the window
@@ -103,7 +104,6 @@ def k_na(oxide_grids, total_grids):
                 'X_coord': data['X_coord'],
                 'Y_coord': data['Y_coord']
             }
-            print(f"Computed k_na for ({NX}, {NY}): ({k2o_value}, {na2o_value}) {k2o_value / na2o_value}")
         else:
             # If the total_value is not valid, set oxide_value to 0
             k_na_grid[(NX, NY)] = {
@@ -114,65 +114,103 @@ def k_na(oxide_grids, total_grids):
     
     return k_na_grid
 
+def load_json(): # function to load elements_weights and oxides_weights from JSON files and return two dictionaries
+    with open('elements_weights.json', 'r') as f: #dictionary with elements and their atomic weights
+        elements_weights = json.load(f)  
+    with open('oxides_weights.json', 'r') as f: # dictionary with oxides and their molecular weights
+        oxides_weights = json.load(f)
+    return elements_weights, oxides_weights
+
+
 
 #This function takes major oxide compositions in wt.% and converts them to mol
-def to_mol(X, oxide_column_indices):
-    a = len(X[0, :])  # number of pixels (rows)
-    b = len(X[:, 0])  # number of oxides + total (columns)
-    total_index = oxide_column_indices.get('Total', None)
+def to_mol(anhydrous_grids, total_grids, oxides_weights):
+    mol_grids = {}
+    for oxide, grid in anhydrous_grids.items():
+        mol_grid = {}
+        mw_oxide = oxides_weights[oxide]['molecular_weight']
+        print(oxide, mw_oxide)
 
-    # Molecular weights with FeO and Fe2O3 calculated
-    mw = {
-        "SiO2": 60.080, "TiO2": 79.870, "Cr2O3": 152.000, "Al2O3": 101.960, "FeO": 71.840, 
-        "MnO": 70.940, "NiO": 74.690, "MgO": 40.300, "CaO": 56.080, "Na2O": 61.980, 
-        "K2O": 94.200, "P2O5": 283.880, "F": 18.998, "Cl": 35.450, "SO3": 80.060, 
-        "BaO": 153.330, "SrO": 103.620, "La2O3": 325.81, "Ce2O3": 328.24, "PbO":223.2, "Fe2O3": 141.94, "Total": 100
-    }
+        for (NX, NY), data in grid.items():
+            total_value = total_grids.get((NX, NY), 0)  # Get Total value from total_grids for the same (NX, NY)
+            if total_value > 0:
+                mol_grid[(NX, NY)] = {
+                    'oxide_value': data['oxide_value']/mw_oxide,
+                    'X_coord': data['X_coord'],
+                    'Y_coord': data['Y_coord']
+                    }
+            else:
+                mol_grid[(NX, NY)] = {
+                    'oxide_value': 0,
+                    'X_coord': data['X_coord'],
+                    'Y_coord': data['Y_coord']
+                    }
+        mol_grids[oxide] = mol_grid
+    return mol_grids, total_grids
 
-    mol = np.copy(X)  # Copy the input to avoid overwriting
+def to_cat(mol_grids, total_grids, oxides_weights):
+    cat_grids = {}
+    for oxide, grid in mol_grids.items():
+        cat_grid = {}
+        cat_oxide = oxides_weights[oxide]['non_oxygen_atoms']
+        print(oxide, cat_oxide)
 
-    # Iterate through the data to convert oxides to mol
-    for i in range(a):  # Iterate over each row (data point)
-        for col_name, col_index in oxide_column_indices.items():  # Iterate over oxide columns
-            if mol[total_index,i] > 0:  # Skip if the value is zero or negative
-                if col_name == "Total":
-                    mol[col_index,i] = 100  # Set "Total" to 100
-                else:
-                    mol[col_index,i] = mol[col_index,i] / mw.get(col_name, 1)  # Convert to mol using molecular weight
-    return mol
+        for (NX, NY), data in grid.items():
+            total_value = total_grids.get((NX, NY), 0)  # Get Total value from total_grids for the same (NX, NY)
+            if total_value > 0:
+                cat_grid[(NX, NY)] = {
+                    'oxide_value': data['oxide_value']*cat_oxide,
+                    'X_coord': data['X_coord'],
+                    'Y_coord': data['Y_coord']
+                    }
+            else:
+                cat_grid[(NX, NY)] = {
+                    'oxide_value': 0,
+                    'X_coord': data['X_coord'],
+                    'Y_coord': data['Y_coord']
+                    }
+        cat_grids[oxide] = cat_grid
+    return cat_grids, total_grids
 
+def m_f(cat_grids, total_grids):
+    mf_grid = {}
+
+    # Directly access K2O and Na2O grids
+    k2oc_grid = cat_grids.get('K2O', {})
+    na2oc_grid = cat_grids.get('Na2O', {})
+    caoc_grid = cat_grids.get('CaO', {})
+    sio2c_grid = cat_grids.get('SiO2', {})
+    al2o3c_grid = cat_grids.get('Al2O3', {})
+
+    # Iterate through the (NX, NY) pairs in the K2O grid
+    for (NX, NY), data in k2oc_grid.items():
+        # Retrieve the K2O and Na2O values for the current (NX, NY)
+        k2oc_value = k2oc_grid.get((NX, NY), {}).get('oxide_value', 0)
+        na2oc_value = na2oc_grid.get((NX, NY), {}).get('oxide_value', 0)
+        caoc_value = caoc_grid.get((NX, NY), {}).get('oxide_value', 0)
+        sio2c_value = sio2c_grid.get((NX, NY), {}).get('oxide_value', 0)
+        al2o3c_value = al2o3c_grid.get((NX, NY), {}).get('oxide_value', 0)
+        total_value = total_grids.get((NX, NY), 0)  # Get Total value from total_grids for the same (NX, NY)
+        total_cat = k2oc_value+na2oc_value+caoc_value+sio2c_value+al2o3c_value
+        print(type(total_cat),total_cat)
+
+        # If total_value is greater than 0, calculate the k_na value
+        if total_value > 0:
+            mf_grid[(NX, NY)] = {
+                'oxide_value': total_cat*(na2oc_value+k2oc_value+(2*caoc_value))/(sio2c_value*al2o3c_value),
+                'X_coord': data['X_coord'],
+                'Y_coord': data['Y_coord']
+            }
+        else:
+            # If the total_value is not valid, set oxide_value to 0
+            mf_grid[(NX, NY)] = {
+                'oxide_value': 0,
+                'X_coord': data['X_coord'],
+                'Y_coord': data['Y_coord']
+            }
+    
+    return mf_grid, total_grids
 #This function takes major oxide compositions in mol and converts them to cation fractions
-def to_cat(X, oxide_column_indices):
-    a = len(X[0, :])  # number of pixels
-    b = len(X[:, 0])  # number of oxides + total
-
-    total_index = oxide_column_indices.get('Total', None)
-    
-    ct = {
-        "SiO2": 1, "TiO2": 1, "Cr2O3": 2, "Al2O3": 2, "FeO": 1,
-        "MnO": 1, "NiO": 1, "MgO": 1, "CaO": 1, "Na2O": 2,
-        "K2O": 2, "P2O5": 2, "F": 1, "Cl": 1, "SO3": 1,
-        "BaO": 1, "SrO": 1, "La2O3": 2, "Ce2O3": 2, "PbO":1, "Fe2O3": 2
-    }
-    
-    cat = np.copy(X)  # copies the input to avoid overwriting
-    
-    for i in range(a):
-        # Calculate cation fractions for each oxide column
-        if cat[total_index,i] > 0:  # Skip if the total value is zero or negative
-            for col_name, col_index in oxide_column_indices.items():  # Iterate over oxide columns
-                if col_name != "Total":
-                    cat[col_index,i] = cat[col_index,i] * ct.get(col_name, 1)  # Calculate cation fractions
-        
-            # Sum all columns (excluding 'Total' column) and store in 'Total' column
-            oxide_columns = [index for col_name, index in oxide_column_indices.items() if col_name != "Total"]  # Exclude "Total"
-            sum_of_oxides = np.sum(cat[oxide_columns,i])  # sum all columns except 'Total'
-            cat[total_index,i] = sum_of_oxides  # Store the sum in the 'Total' column
-            for col_name, col_index in oxide_column_indices.items():
-                if col_name != "Total":
-                    cat[col_index,i] = cat[col_index,i] / cat[total_index,i] 
-                
-    return cat
 
 def add_fe2o3(X, oxide_column_indices):
     Fe2_Fetot = 0.7  # Ratio Fe2+/Fe3+ for NNO
