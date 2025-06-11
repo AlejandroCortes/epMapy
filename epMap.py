@@ -11,6 +11,7 @@ from matplotlib_scalebar.scalebar import ScaleBar #to add a scale bar to the map
 import scipy.ndimage
 import os # to access paths and modify file names
 import json # to work with json files
+import pickle
 # functions and stuff from FileSelector.py
 from file_selector import FileSelector, load_data, extract_elementsoxides 
 
